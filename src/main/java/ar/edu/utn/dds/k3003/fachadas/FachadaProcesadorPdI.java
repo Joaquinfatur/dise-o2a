@@ -1,6 +1,7 @@
 package ar.edu.utn.dds.k3003.fachadas;
 
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
+import ar.edu.utn.dds.k3003.facades.FachadaSolicitudes;
 import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
 import ar.edu.utn.dds.k3003.mappers.PdIDTOMapper;
 import ar.edu.utn.dds.k3003.mappers.PdIMapper;
@@ -19,6 +20,13 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
     
     @Autowired
     private PdIRepository repository;
+    
+    private FachadaSolicitudes fachadaSolicitudes;
+
+    @Override
+    public void setFachadaSolicitudes(FachadaSolicitudes fachadaSolicitudes) {
+        this.fachadaSolicitudes = fachadaSolicitudes;
+    }
 
     @Override
     public PdIDTO procesar(PdIDTO dto) {

@@ -6,11 +6,31 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/pdis")
+
 public class PdIController {
+
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+    return ResponseEntity.ok("OK");
+    }
+
+    @RestController
+    public class HealthController {
+    
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> health() {
+        Map<String, String> status = new HashMap<>();
+        status.put("status", "UP");
+        status.put("service", "ProcesadorPdI");
+        return ResponseEntity.ok(status);
+    }
+    }
 
     @Autowired
     private FachadaProcesadorPdI fachada;
