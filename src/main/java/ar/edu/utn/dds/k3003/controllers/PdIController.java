@@ -3,6 +3,7 @@ package ar.edu.utn.dds.k3003.controllers;
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
 import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,7 +25,7 @@ public class PdIController {
         if (hecho != null) {
             return fachada.buscarPorHecho(hecho);
         } else {
-            throw new UnsupportedOperationException("GET /pdis sin filtro");
+            throw new UnsupportedOperationException("GET /pdis sin filtro no está soportado");
         }
     }
 

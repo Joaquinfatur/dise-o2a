@@ -20,53 +20,37 @@ public class PdI {
         this.contenido = contenido;
         this.etiquetas = new ArrayList<>();
         this.procesado = false;
+        this.hechoId = 0;
     }
 
     public PdI(String id, String contenido) {
-    this.id = Integer.parseInt(id);
-    this.hechoId = 0; // Valor default
-    this.contenido = contenido;
-    this.etiquetas = new ArrayList<>();
-    this.procesado = false;
+        this.id = Integer.parseInt(id);
+        this.hechoId = 0;
+        this.contenido = contenido;
+        this.etiquetas = new ArrayList<>();
+        this.procesado = false;
     }
 
-    public int getHechoId() {
-        return hechoId;
-    }   
-
     public void etiquetar(List<String> nuevasEtiquetas) {
-        if (!procesado) {
+        if (!procesado && nuevasEtiquetas != null) {
             etiquetas.addAll(nuevasEtiquetas);
             procesado = true;
         }
     }
 
-    // Agregamos los getters para id y contenido
-    public int getId() {
-        return id;
-    }
-    
-    public String getContenido() {
-        return contenido;
-    }
-    
-    public List<String> getEtiquetas() { 
-        return etiquetas; 
-    }
-    
-    public boolean isProcesado() { 
-        return procesado; 
-    }
-    public String getUbicacion() {
-    return this.ubicacion;
-    }
+    // Getters
+    public int getId() { return id; }
+    public String getContenido() { return contenido; }
+    public List<String> getEtiquetas() { return new ArrayList<>(etiquetas); }
+    public boolean isProcesado() { return procesado; }
+    public int getHechoId() { return hechoId; }
+    public String getUbicacion() { return this.ubicacion; }
+    public LocalDateTime getFecha() { return this.fecha; }
+    public String getUsuarioId() { return this.usuarioId; }
 
-    public LocalDateTime getFecha() {
-    return this.fecha;
-    }
-
-    public String getUsuarioId() {
-    return this.usuarioId;
-    }
-
+    // Setters necesarios
+    public void setHechoId(int hechoId) { this.hechoId = hechoId; }
+    public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+    public void setUsuarioId(String usuarioId) { this.usuarioId = usuarioId; }
 }

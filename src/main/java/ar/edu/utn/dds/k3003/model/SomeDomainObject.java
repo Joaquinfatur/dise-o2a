@@ -1,14 +1,8 @@
 package ar.edu.utn.dds.k3003.model;
 
 import ar.edu.utn.dds.k3003.model.exceptions.SomeDomainException;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
 import java.util.Objects;
 
-@Data
-@AllArgsConstructor
 public class SomeDomainObject {
 
     private final String anAttribute;
