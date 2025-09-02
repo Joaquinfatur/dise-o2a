@@ -6,51 +6,46 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/pdis")
-
 public class PdIController {
-
-    @GetMapping("/health")
-    public ResponseEntity<String> health() {
-    return ResponseEntity.ok("OK");
-    }
-
-    @RestController
-    public class HealthController {
-    
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        Map<String, String> status = new HashMap<>();
-        status.put("status", "UP");
-        status.put("service", "ProcesadorPdI");
-        return ResponseEntity.ok(status);
-    }
-    }
 
     @Autowired
     private FachadaProcesadorPdI fachada;
 
     @PostMapping
-    public PdIDTO crear(@RequestBody PdIDTO dto) {
-        return fachada.procesar(dto);
+    public ResponseEntity<PdIDTO> crear(@RequestBody PdIDTO dto) {
+        try {
+            PdIDTO resultado = fachada.procesar(dto);
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping
-    public List<PdIDTO> obtenerPorHecho(@RequestParam(name = "hecho", required = false) String hecho) {
-        if (hecho != null) {
-            return fachada.buscarPorHecho(hecho);
-        } else {
-            throw new UnsupportedOperationException("GET /pdis sin filtro no está soportado");
+    public ResponseEntity<List<PdIDTO>> obtenerPdIs(@RequestParam(name = "hecho", required = false) String hecho) {
+        try {
+            if (hecho != null) {
+                List<PdIDTO> pdis = fachada.buscarPorHecho(hecho);
+                return ResponseEntity.ok(pdis);
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
     @GetMapping("/{id}")
-    public PdIDTO obtenerPorId(@PathVariable String id) {
-        return fachada.buscarPdIPorId(id);
+    public ResponseEntity<PdIDTO> obtenerPorId(@PathVariable String id) {
+        try {
+            PdIDTO pdi = fachada.buscarPdIPorId(id);
+            return ResponseEntity.ok(pdi);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
