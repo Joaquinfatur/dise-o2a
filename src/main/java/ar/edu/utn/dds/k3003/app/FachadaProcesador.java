@@ -1,7 +1,5 @@
 package ar.edu.utn.dds.k3003.app;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI;
 import ar.edu.utn.Simulacion.SolicitudesSimulacion;
 import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
@@ -30,8 +28,8 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
         }
         
         // Si ya existe, devolver la existente
-        if (piezasProcesadas.containsKey(piezaDTO.getId())) {
-            PdI piezaExistente = piezasProcesadas.get(piezaDTO.getId());
+        if (piezasProcesadas.containsKey(Integer.parseInt(piezaDTO.getId()))) {
+            PdI piezaExistente = piezasProcesadas.get(Integer.parseInt(piezaDTO.getId()));
             return new PdILocalDTO(
                 String.valueOf(piezaExistente.getId()),
                 String.valueOf(piezaExistente.getHechoId()),
@@ -68,7 +66,6 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
         );
     }
     
-    
     private boolean hechoActivo(int idHecho) {
         // Delegar a la simulación
         return SolicitudesSimulacion.hechoActivo(idHecho);
@@ -80,4 +77,3 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
         return SolicitudesSimulacion.obtenerPdIsPorHecho(idHecho, piezasInternas);
     }
 }
-

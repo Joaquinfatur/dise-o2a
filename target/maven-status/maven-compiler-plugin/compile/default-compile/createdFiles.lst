@@ -12,6 +12,7 @@ ar\edu\utn\dds\k3003\controllers\PdIController.class
 ar\edu\utn\dds\k3003\app\WebApp.class
 ar\edu\utn\dds\k3003\model\exceptions\SomeDomainException.class
 ar\edu\utn\dds\k3003\app\FachadaProcesador.class
+ar\edu\utn\dds\k3003\config\WebConfig.class
 ar\edu\utn\dds\k3003\mappers\PdIDTOMapper.class
 ar\edu\utn\dds\k3003\model\PdI\PdI.class
 ar\edu\utn\dds\k3003\persistence\PdIRepository.class
