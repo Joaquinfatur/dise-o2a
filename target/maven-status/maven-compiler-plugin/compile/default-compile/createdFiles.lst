@@ -4,9 +4,7 @@ ar\edu\utn\dds\k3003\fachadas\FachadaProcesadorPdI.class
 ar\edu\utn\dds\k3003\dtos\PdILocalDTO.class
 ar\edu\utn\dds\k3003\model\SomeDomainObject.class
 ar\edu\utn\dds\k3003\Application.class
-org\springframework\boot\autoconfigure\SpringBootApplication.class
 ar\edu\utn\dds\k3003\mappers\PdIMapper.class
-ar\edu\utn\dds\k3003\WebTestApplication.class
 ar\edu\utn\dds\k3003\controllers\TestController.class
 ar\edu\utn\dds\k3003\controllers\PdIController.class
 ar\edu\utn\dds\k3003\app\WebApp.class
