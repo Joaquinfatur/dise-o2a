@@ -5,6 +5,7 @@ import ar.edu.utn.dds.k3003.clients.ServicesClient;
 import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
 import ar.edu.utn.dds.k3003.model.PdI.PdI;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.List;
 
 @Service
+@Primary  // Esta anotación le dice a Spring que use esta implementación por defecto
 public class FachadaProcesador extends FachadaProcesadorPdI {
     private final Map<Integer, PdI> piezasProcesadas = new HashMap<>();
 
