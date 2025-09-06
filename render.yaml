@@ -16,11 +16,7 @@ services:
         value: password
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
         value: create-drop
-      - key: SERVICES_FUENTES_URL
-        value: http://localhost:8081
-      - key: SERVICES_SOLICITUDES_URL
-        value: http://localhost:8082
-      - key: SERVICES_AGREGADOR_URL
-        value: http://localhost:8083
+      - key: SERVICES_ENABLED
+        value: false
       - key: JAVA_TOOL_OPTIONS
         value: -Xmx512m
