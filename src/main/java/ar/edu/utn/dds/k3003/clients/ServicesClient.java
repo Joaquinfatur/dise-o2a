@@ -1,26 +1,25 @@
 package ar.edu.utn.dds.k3003.clients;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 public class ServicesClient {
 
     private final WebClient webClient;
 
-    @Value("${services.fuentes.url}")
+    @Value("${services.fuentes.url:http://localhost:8081}")
     private String fuentesUrl;
 
-    @Value("${services.solicitudes.url}")
+    @Value("${services.solicitudes.url:http://localhost:8082}")
     private String solicitudesUrl;
 
-    @Value("${services.agregador.url}")
+    @Value("${services.agregador.url:http://localhost:8083}")
     private String agregadorUrl;
 
     public ServicesClient() {
