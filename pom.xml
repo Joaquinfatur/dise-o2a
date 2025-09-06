@@ -53,7 +53,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Métricas básicas sin Datadog -->
+    <!-- Actuator básico (sin Datadog) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
