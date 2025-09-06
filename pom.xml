@@ -46,11 +46,11 @@
       <scope>runtime</scope>
     </dependency>
 
-    <!-- H2 para testing local (opcional) -->
+    <!-- H2 para desarrollo y producción temporal -->
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
-      <scope>test</scope>
+      <scope>runtime</scope>
     </dependency>
 
     <!-- Actuator básico (sin Datadog) -->

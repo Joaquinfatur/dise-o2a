@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: procesador-pdi
+    env: java
+    plan: free
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -jar -Dspring.profiles.active=local target/my-app-name-1.0-SNAPSHOT.jar
+    envVars:
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xmx512m
