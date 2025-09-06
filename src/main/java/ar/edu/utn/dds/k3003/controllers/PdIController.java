@@ -15,8 +15,9 @@ public class PdIController {
     @Autowired
     private FachadaProcesadorPdI fachada;
 
+    // POST /pdis - Procesar una nueva PdI
     @PostMapping
-    public ResponseEntity<PdIDTO> crear(@RequestBody PdIDTO dto) {
+    public ResponseEntity<PdIDTO> procesar(@RequestBody PdIDTO dto) {
         try {
             PdIDTO resultado = fachada.procesar(dto);
             return ResponseEntity.ok(resultado);
@@ -25,13 +26,18 @@ public class PdIController {
         }
     }
 
+    // GET /pdis - Obtener todas las PdIs (sin filtro)
+    // GET /pdis?hecho={hechoId} - Obtener PdIs por hecho
     @GetMapping
     public ResponseEntity<List<PdIDTO>> obtenerPdIs(@RequestParam(name = "hecho", required = false) String hecho) {
         try {
-            if (hecho != null) {
+            if (hecho != null && !hecho.trim().isEmpty()) {
+                // Buscar por hecho específico
                 List<PdIDTO> pdis = fachada.buscarPorHecho(hecho);
                 return ResponseEntity.ok(pdis);
             } else {
+                // Si no hay parámetro hecho, devolver error o lista vacía
+                // Según la especificación, parece que siempre debe haber un filtro
                 return ResponseEntity.badRequest().build();
             }
         } catch (Exception e) {
@@ -39,12 +45,17 @@ public class PdIController {
         }
     }
 
+    // GET /pdis/{id} - Obtener PdI por ID
     @GetMapping("/{id}")
     public ResponseEntity<PdIDTO> obtenerPorId(@PathVariable String id) {
         try {
+            System.out.println("Buscando PdI con ID: " + id);
             PdIDTO pdi = fachada.buscarPdIPorId(id);
+            System.out.println("PdI encontrada: " + pdi);
             return ResponseEntity.ok(pdi);
         } catch (Exception e) {
+            System.err.println("Error en GET /pdis/" + id + ": " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.notFound().build();
         }
     }
