@@ -35,7 +35,7 @@ public class PdILocalDTO {
     }
 
 
-    // Getters y setters
+    // geters y seters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 

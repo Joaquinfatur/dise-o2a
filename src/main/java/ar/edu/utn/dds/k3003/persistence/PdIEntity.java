@@ -23,7 +23,6 @@ public class PdIEntity {
     @Column(name = "etiqueta")
     private List<String> etiquetas = new ArrayList<>();
 
-    // Constructores
     public PdIEntity() {}
 
     public PdIEntity(Integer hechoId, String contenido, List<String> etiquetas) {
@@ -39,7 +38,7 @@ public class PdIEntity {
         this.etiquetas = etiquetas != null ? new ArrayList<>(etiquetas) : new ArrayList<>();
     }
 
-    // Getters
+    // Geters
     public Integer getId() { 
         return id; 
     }
@@ -56,7 +55,7 @@ public class PdIEntity {
         return etiquetas != null ? etiquetas : new ArrayList<>(); 
     }
 
-    // Setters
+    // Seters
     public void setId(Integer id) {
         this.id = id;
     }

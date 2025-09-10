@@ -8,7 +8,7 @@ import ar.edu.utn.dds.k3003.persistence.PdIEntity;
 public class PdIMapper {
     public static PdIEntity toEntity(PdI pdi) {
         PdIEntity entity = new PdIEntity();
-        // No setear ID porque es auto-generado
+        // Id Auto generado
         entity.setHechoId(pdi.getHechoId());
         entity.setContenido(pdi.getContenido());
         entity.setEtiquetas(pdi.getEtiquetas());

@@ -36,8 +36,6 @@ public class PdIController {
                 List<PdIDTO> pdis = fachada.buscarPorHecho(hecho);
                 return ResponseEntity.ok(pdis);
             } else {
-                // Si no hay parámetro hecho, devolver error o lista vacía
-                // Según la especificación, parece que siempre debe haber un filtro
                 return ResponseEntity.badRequest().build();
             }
         } catch (Exception e) {

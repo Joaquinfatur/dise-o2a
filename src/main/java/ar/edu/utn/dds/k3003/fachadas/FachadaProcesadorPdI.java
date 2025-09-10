@@ -48,11 +48,9 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             return PdIDTOMapper.toFacadesDto(result);
         }
         
-        // Crear nueva PdI
         PdI nuevaPdi = new PdI(localDTO.getId(), localDTO.getContenido());
         nuevaPdi.etiquetar(List.of("Procesado", "Importante"));
         
-        // Crear entidad y guardar
         PdIEntity entity = PdIMapper.toEntity(nuevaPdi);
         if (localDTO.getHechoId() != null) {
             entity.setHechoId(Integer.parseInt(localDTO.getHechoId()));
@@ -60,7 +58,6 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
         
         PdIEntity saved = repository.save(entity);
         
-        // Retornar resultado
         PdI savedPdi = PdIMapper.toModel(saved);
         PdILocalDTO result = new PdILocalDTO(
             String.valueOf(saved.getId()),

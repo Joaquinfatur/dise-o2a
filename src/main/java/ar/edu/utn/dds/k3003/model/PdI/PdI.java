@@ -38,7 +38,7 @@ public class PdI {
         }
     }
 
-    // Getters
+    // Geters
     public int getId() { return id; }
     public String getContenido() { return contenido; }
     public List<String> getEtiquetas() { return new ArrayList<>(etiquetas); }
@@ -48,7 +48,6 @@ public class PdI {
     public LocalDateTime getFecha() { return this.fecha; }
     public String getUsuarioId() { return this.usuarioId; }
 
-    // Setters necesarios
     public void setHechoId(int hechoId) { this.hechoId = hechoId; }
     public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }
     public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }

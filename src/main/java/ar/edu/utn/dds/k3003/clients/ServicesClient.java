@@ -28,9 +28,7 @@ public class ServicesClient {
                 .build();
     }
 
-    /**
-     * Verifica si un hecho está activo consultando al servicio de Solicitudes
-     */
+
     public boolean isHechoActivo(String hechoId) {
         try {
             String response = webClient.get()
@@ -40,35 +38,23 @@ public class ServicesClient {
                     .timeout(Duration.ofSeconds(5))
                     .block();
             
-            // Si no hay solicitudes de eliminación para este hecho, está activo
+            
             return response == null || response.equals("[]");
         } catch (Exception e) {
-            // En caso de error, asumir que está activo (fail-safe)
+            
             System.err.println("Error consultando estado del hecho " + hechoId + ": " + e.getMessage());
             return true;
         }
     }
-
-    /**
-     * Obtiene información de un hecho desde el servicio de Fuentes
-     */
     public Map<String, Object> getHecho(String hechoId) {
         try {
-            return webClient.get()
-                    .uri(fuentesUrl + "/hecho/" + hechoId)
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .timeout(Duration.ofSeconds(5))
-                    .block();
+            return webClient.get().uri(fuentesUrl + "/hecho/" + hechoId).retrieve().bodyToMono(Map.class).timeout(Duration.ofSeconds(5))
+            .block();
         } catch (Exception e) {
             System.err.println("Error obteniendo hecho " + hechoId + ": " + e.getMessage());
             return null;
         }
     }
-
-    /**
-     * Notifica al Agregador que hay nuevas PdIs disponibles
-     */
     public void notifyAggregator(String hechoId, List<String> pdiIds) {
         try {
             Map<String, Object> notification = Map.of(
@@ -93,7 +79,7 @@ public class ServicesClient {
     }
 
     /**
-     * Health check para verificar conectividad con otros servicios
+     * Health check 
      */
     public Map<String, String> checkServicesHealth() {
         return Map.of(

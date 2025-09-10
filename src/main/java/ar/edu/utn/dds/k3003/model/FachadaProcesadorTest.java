@@ -32,7 +32,6 @@ public class FachadaProcesadorTest {
             assertNotNull(resultado);
             assertTrue(resultado.getEtiquetas().contains("Importante"));
         } catch (Exception e) {
-            // Si hay excepción, el test falla
             throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
         }
     }
@@ -46,10 +45,8 @@ public class FachadaProcesadorTest {
             
             PdILocalDTO resultado = procesador.procesarPdI(piezaDTO);
             
-            // Como ahora usamos lógica de fallback, este test podría pasar
-            // dependiendo de la implementación. Ajustamos la expectativa:
-            // Si el servicio no está disponible, debería usar el fallback
-            assertNotNull(resultado); // Cambiamos de assertNull a assertNotNull para el fallback
+
+            assertNotNull(resultado);
         } catch (Exception e) {
             throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
         }
@@ -101,7 +98,6 @@ public class FachadaProcesadorTest {
     @Test
     void procesadorDebeObtenerEstadisticas() {
         try {
-            // Test nuevo para verificar que las estadísticas funcionan
             var stats = procesador.getEstadisticas();
             
             assertNotNull(stats);
@@ -115,18 +111,15 @@ public class FachadaProcesadorTest {
     @Test
     void procesadorDebeLimpiarDatos() {
         try {
-            // Procesar una PdI
+
             PdILocalDTO dto = new PdILocalDTO(1, 2, "Texto de prueba");
             procesador.procesarPdI(dto);
             
-            // Verificar que hay datos
             var statsAntes = procesador.getEstadisticas();
             assertTrue((Long) statsAntes.get("enMemoria") > 0);
             
-            // Limpiar datos
             procesador.limpiarDatos();
             
-            // Verificar que no hay datos
             var statsDespues = procesador.getEstadisticas();
             assertEquals(0L, (Long) statsDespues.get("enMemoria"));
         } catch (Exception e) {
