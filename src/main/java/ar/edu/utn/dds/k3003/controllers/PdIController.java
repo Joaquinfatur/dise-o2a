@@ -1,7 +1,7 @@
 package ar.edu.utn.dds.k3003.controllers;
 
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
-import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI;
+import ar.edu.utn.dds.k3003.app.FachadaProcesador; // Usar implementación concreta
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +15,9 @@ import java.util.Map;
 public class PdIController {
 
     @Autowired
-    private FachadaProcesadorPdI fachada;
+    private FachadaProcesador fachada; // Cambio aquí - usar implementación con métricas
 
-    // POST /pdis
+    // POST /pdis - Procesar una nueva PdI
     @PostMapping
     public ResponseEntity<PdIDTO> procesar(@RequestBody PdIDTO dto) {
         try {
@@ -38,7 +38,7 @@ public class PdIController {
         }
     }
 
-    // GET /pdis?hecho={hechoId}
+    // GET /pdis?hecho={hechoId} - Obtener PdIs por hecho
     @GetMapping
     public ResponseEntity<?> obtenerPdIs(@RequestParam(name = "hecho", required = false) String hecho) {
         try {
@@ -48,6 +48,7 @@ public class PdIController {
                 System.out.println("Encontradas " + pdis.size() + " PdIs para hecho " + hecho);
                 return ResponseEntity.ok(pdis);
             } else {
+                // Si no hay parámetro hecho, devolver error descriptivo
                 return ResponseEntity.badRequest()
                     .body(Map.of(
                         "error", "Parameter 'hecho' is required",
@@ -63,7 +64,7 @@ public class PdIController {
         }
     }
 
-    // GET /pdis/{id} 
+    // GET /pdis/{id} - Obtener PdI por ID
     @GetMapping("/{id}")
     public ResponseEntity<?> obtenerPorId(@PathVariable String id) {
         try {
@@ -82,12 +83,13 @@ public class PdIController {
         }
     }
 
-    // GET /pdis/test 
+    // GET /pdis/test - Endpoint de prueba
     @GetMapping("/test")
     public ResponseEntity<Map<String, Object>> test() {
         return ResponseEntity.ok(Map.of(
-            "status", "PdIController working",
+            "status", "PdIController working with metrics",
             "service", "procesador-pdi",
+            "metricsEnabled", "true",
             "endpoints", List.of(
                 "POST /pdis - Create PdI",
                 "GET /pdis?hecho={id} - Get PdIs by hecho",
@@ -97,22 +99,11 @@ public class PdIController {
         ));
     }
 
-    // GET /pdis/stats 
+    // GET /pdis/stats - Estadísticas con métricas
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         try {
-
-            if (fachada instanceof ar.edu.utn.dds.k3003.app.FachadaProcesador) {
-                ar.edu.utn.dds.k3003.app.FachadaProcesador fachadaProcesador = 
-                    (ar.edu.utn.dds.k3003.app.FachadaProcesador) fachada;
-                return ResponseEntity.ok(fachadaProcesador.getEstadisticas());
-            } else {
-                return ResponseEntity.ok(Map.of(
-                    "message", "Stats available at /stats endpoint",
-                    "controller", "PdIController",
-                    "fachada", fachada.getClass().getSimpleName()
-                ));
-            }
+            return ResponseEntity.ok(fachada.getEstadisticas());
         } catch (Exception e) {
             System.err.println("Error obteniendo estadísticas: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
