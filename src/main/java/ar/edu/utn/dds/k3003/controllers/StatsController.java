@@ -12,11 +12,11 @@ import java.util.Map;
 @RestController
 public class StatsController {
 
-    // CAMBIO: Usar la misma fachada que PdIController
+    
     @Autowired
     private FachadaProcesadorPdI fachada;
 
-    // AGREGAR: Inyectar contadores directamente para stats
+    
     @Autowired(required = false)
     private Counter pdisProcessedCounter;
     
@@ -29,18 +29,18 @@ public class StatsController {
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         try {
-            // Obtener estadísticas reales de la base de datos
-            long totalEnBD = fachada.buscarTodas().size(); // ← Contar desde BD
+
+            long totalEnBD = fachada.buscarTodas().size(); 
             
             Map<String, Object> stats = Map.of(
                 "totalProcesadas", pdisProcessedCounter != null ? pdisProcessedCounter.count() : 0.0,
                 "totalRechazadas", pdisRejectedCounter != null ? pdisRejectedCounter.count() : 0.0,
                 "totalErrores", pdisErrorCounter != null ? pdisErrorCounter.count() : 0.0,
-                "enBaseDatos", totalEnBD, // ← REAL count from database
+                "enBaseDatos", totalEnBD, 
                 "serviciosExternos", Map.of(
-                    "fuentes", "DOWN (normal en Render)",
-                    "solicitudes", "DOWN (normal en Render)", 
-                    "agregador", "DOWN (normal en Render)"
+                "fuentes", "DOWN (normal en Render)",
+                "solicitudes", "DOWN (normal en Render)", 
+                "agregador", "DOWN (normal en Render)"
                 )
             );
             
@@ -55,7 +55,6 @@ public class StatsController {
     
     @GetMapping("/clear")
     public ResponseEntity<String> clearData() {
-        // NO IMPLEMENTAR - No queremos borrar la BD en producción
         return ResponseEntity.ok("Clear no implementado para proteger datos de producción");
     }
     
@@ -69,7 +68,6 @@ public class StatsController {
         ));
     }
 
-    // NUEVO: Endpoint para debug específico
     @GetMapping("/debug-stats")
     public ResponseEntity<Map<String, Object>> debugStats() {
         try {
@@ -85,5 +83,22 @@ public class StatsController {
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of("error", e.getMessage()));
         }
+    }
+
+    private static final long START_TIME = System.currentTimeMillis();
+
+    @GetMapping("/uptime")
+    public ResponseEntity<Map<String, Object>> getUptime() {
+    long uptimeMs = System.currentTimeMillis() - START_TIME;
+    long uptimeSeconds = uptimeMs / 1000;
+    long uptimeMinutes = uptimeSeconds / 60;
+    
+    return ResponseEntity.ok(Map.of(
+        "uptimeMs", uptimeMs,
+        "uptimeSeconds", uptimeSeconds,
+        "uptimeMinutes", uptimeMinutes,
+        "startTime", new java.util.Date(START_TIME).toString(),
+        "currentTime", new java.util.Date().toString()
+    ));
     }
 }
