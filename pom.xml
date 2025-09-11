@@ -33,6 +33,12 @@
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
     
+    <!-- Datadog-->
+    <dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-datadog</artifactId>
+    </dependency>
+
     <!-- Spring Data JPA -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

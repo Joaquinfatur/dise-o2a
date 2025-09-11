@@ -15,43 +15,49 @@ public class MetricsConfig {
 
     @Bean
     public Counter pdisProcessedCounter() {
-        return Counter.builder("pdis.processed.total")
+        return Counter.builder("procesador.pdis.processed.total")
                 .description("Total number of PdIs processed")
+                .tag("service", "procesador-pdi")
                 .register(meterRegistry);
     }
 
     @Bean
     public Counter pdisErrorCounter() {
-        return Counter.builder("pdis.errors.total")
+        return Counter.builder("procesador.pdis.errors.total")
                 .description("Total number of errors processing PdIs")
+                .tag("service", "procesador-pdi")
                 .register(meterRegistry);
     }
 
     @Bean
     public Counter pdisRejectedCounter() {
-        return Counter.builder("pdis.rejected.total")
+        return Counter.builder("procesador.pdis.rejected.total")
                 .description("Total number of rejected PdIs")
+                .tag("service", "procesador-pdi")
                 .register(meterRegistry);
     }
 
     @Bean
     public Timer processingTimer() {
-        return Timer.builder("pdis.processing.duration")
+        return Timer.builder("procesador.pdis.processing.duration")
                 .description("Time taken to process PdIs")
+                .tag("service", "procesador-pdi")
                 .register(meterRegistry);
     }
 
     @Bean
     public Counter httpRequestsCounter() {
-        return Counter.builder("http.requests.total")
+        return Counter.builder("procesador.http.requests.total")
                 .description("Total HTTP requests")
+                .tag("service", "procesador-pdi")
                 .register(meterRegistry);
     }
 
     @Bean
     public Counter databaseOperationsCounter() {
-        return Counter.builder("database.operations.total")
+        return Counter.builder("procesador.database.operations.total")
                 .description("Total database operations")
+                .tag("service", "procesador-pdi")
                 .register(meterRegistry);
     }
 }
