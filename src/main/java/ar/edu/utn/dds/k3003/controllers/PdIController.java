@@ -1,7 +1,7 @@
 package ar.edu.utn.dds.k3003.controllers;
 
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
-import ar.edu.utn.dds.k3003.app.FachadaProcesador; // Usar implementación concreta
+import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +15,7 @@ import java.util.Map;
 public class PdIController {
 
     @Autowired
-    private FachadaProcesador fachada; // Cambio aquí - usar implementación con métricas
+    private FachadaProcesadorPdI fachada;
 
     // POST /pdis - Procesar una nueva PdI
     @PostMapping
@@ -48,7 +48,6 @@ public class PdIController {
                 System.out.println("Encontradas " + pdis.size() + " PdIs para hecho " + hecho);
                 return ResponseEntity.ok(pdis);
             } else {
-                // Si no hay parámetro hecho, devolver error descriptivo
                 return ResponseEntity.badRequest()
                     .body(Map.of(
                         "error", "Parameter 'hecho' is required",
@@ -87,9 +86,8 @@ public class PdIController {
     @GetMapping("/test")
     public ResponseEntity<Map<String, Object>> test() {
         return ResponseEntity.ok(Map.of(
-            "status", "PdIController working with metrics",
+            "status", "PdIController working",
             "service", "procesador-pdi",
-            "metricsEnabled", "true",
             "endpoints", List.of(
                 "POST /pdis - Create PdI",
                 "GET /pdis?hecho={id} - Get PdIs by hecho",
@@ -97,17 +95,5 @@ public class PdIController {
                 "GET /pdis/test - This test endpoint"
             )
         ));
-    }
-
-    // GET /pdis/stats - Estadísticas con métricas
-    @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> getStats() {
-        try {
-            return ResponseEntity.ok(fachada.getEstadisticas());
-        } catch (Exception e) {
-            System.err.println("Error obteniendo estadísticas: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error retrieving stats"));
-        }
     }
 }
