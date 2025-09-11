@@ -37,6 +37,10 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
 
     public PdILocalDTO procesarPdI(PdILocalDTO piezaDTO) {
         Timer.Sample sample = Timer.start();
+
+         System.out.println("=== DEBUG ===");
+        System.out.println("hechoId recibido: " + piezaDTO.getHechoId());
+        System.out.println("contenido recibido: " + piezaDTO.getContenido());
         try {
         if (piezaDTO.getContenido() == null || piezaDTO.getContenido().trim().isEmpty()) {
             pdisRejectedCounter.increment();

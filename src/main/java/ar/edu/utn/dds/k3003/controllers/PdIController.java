@@ -17,33 +17,110 @@ public class PdIController {
     @Autowired
     private FachadaProcesadorPdI fachada;
 
-    // POST /pdis - Procesar una nueva PdI
-    @PostMapping
-    public ResponseEntity<PdIDTO> procesar(@RequestBody PdIDTO dto) {
+    // GET /pdis/test
+    @GetMapping("/test")
+    public ResponseEntity<Map<String, Object>> test() {
+        System.out.println("Test endpoint llamado");
+        return ResponseEntity.ok(Map.of(
+            "status", "PdIController working correctly",
+            "service", "procesador-pdi",
+            "timestamp", System.currentTimeMillis(),
+            "endpoints", List.of(
+                "POST /pdis - Create PdI",
+                "GET /pdis?hecho={id} - Get PdIs by hecho",
+                "GET /pdis/{id} - Get PdI by ID",
+                "GET /pdis/test - This test endpoint",
+                "GET /pdis/stats - Statistics endpoint"
+            )
+        ));
+    }
+
+    // GET /pdis/stats 
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getStats() {
         try {
-            System.out.println("Recibiendo PdI para procesar: " + dto.id());
-            PdIDTO resultado = fachada.procesar(dto);
-            
-            if (resultado == null) {
-                System.out.println("PdI rechazada: " + dto.id());
-                return ResponseEntity.badRequest().build();
-            }
-            
-            System.out.println("PdI procesada exitosamente: " + resultado.id());
-            return ResponseEntity.ok(resultado);
+            System.out.println("Stats endpoint llamado");
+            return ResponseEntity.ok(Map.of(
+                "message", "Stats from PdIController",
+                "controller", "PdIController",
+                "fachada", fachada.getClass().getSimpleName(),
+                "info", "For full stats check /stats endpoint"
+            ));
         } catch (Exception e) {
-            System.err.println("Error procesando PdI " + dto.id() + ": " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            System.err.println("Error en stats: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error retrieving stats"));
         }
     }
 
-    // GET /pdis?hecho={hechoId} - Obtener PdIs por hecho
+    // POST /pdis
+    @PostMapping
+    public ResponseEntity<?> procesar(@RequestBody PdIDTO dto) {
+        try {
+            System.out.println("=== POST /pdis ===");
+            System.out.println("ID recibido: " + dto.id());
+            System.out.println("HechoId recibido: " + dto.hechoId());
+            System.out.println("Contenido recibido: " + dto.contenido());
+            
+            PdIDTO resultado = fachada.procesar(dto);
+            
+            if (resultado == null) {
+                System.out.println("PdI rechazada");
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "PdI was rejected"));
+            }
+            
+            System.out.println("PdI procesada exitosamente - ID resultado: " + resultado.id());
+            return ResponseEntity.ok(resultado);
+            
+        } catch (Exception e) {
+            System.err.println("Error procesando PdI: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "error", "Internal server error", 
+                    "message", e.getMessage()
+                ));
+        }
+    }
+
+    // GET /pdis/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerPorId(@PathVariable String id) {
+        try {
+            System.out.println("=== GET /pdis/" + id + " ===");
+            
+            // Validar que el ID no sea un endpoint específico
+            if ("test".equals(id) || "stats".equals(id)) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            PdIDTO pdi = fachada.buscarPdIPorId(id);
+            System.out.println("PdI encontrada con ID: " + pdi.id());
+            return ResponseEntity.ok(pdi);
+            
+        } catch (RuntimeException e) {
+            System.err.println("PdI no encontrada con ID: " + id);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            System.err.println("Error obteniendo PdI " + id + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "error", "Internal server error",
+                    "id", id
+                ));
+        }
+    }
+
+    // GET /pdis 
     @GetMapping
     public ResponseEntity<?> obtenerPdIs(@RequestParam(name = "hecho", required = false) String hecho) {
         try {
+            System.out.println("=== GET /pdis ===");
+            System.out.println("Parámetro hecho: " + hecho);
+            
             if (hecho != null && !hecho.trim().isEmpty()) {
-                System.out.println("Buscando PdIs para hecho: " + hecho);
                 List<PdIDTO> pdis = fachada.buscarPorHecho(hecho);
                 System.out.println("Encontradas " + pdis.size() + " PdIs para hecho " + hecho);
                 return ResponseEntity.ok(pdis);
@@ -52,48 +129,17 @@ public class PdIController {
                     .body(Map.of(
                         "error", "Parameter 'hecho' is required",
                         "usage", "GET /pdis?hecho={hechoId}",
-                        "example", "GET /pdis?hecho=123"
+                        "example", "GET /pdis?hecho=999"
                     ));
             }
         } catch (Exception e) {
             System.err.println("Error obteniendo PdIs para hecho " + hecho + ": " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Internal server error"));
+                .body(Map.of(
+                    "error", "Internal server error",
+                    "hecho", hecho
+                ));
         }
-    }
-
-    // GET /pdis/{id} - Obtener PdI por ID
-    @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerPorId(@PathVariable String id) {
-        try {
-            System.out.println("Buscando PdI con ID: " + id);
-            PdIDTO pdi = fachada.buscarPdIPorId(id);
-            System.out.println("PdI encontrada: " + pdi.id());
-            return ResponseEntity.ok(pdi);
-        } catch (RuntimeException e) {
-            System.err.println("PdI no encontrada con ID: " + id);
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            System.err.println("Error obteniendo PdI " + id + ": " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Internal server error"));
-        }
-    }
-
-    // GET /pdis/test - Endpoint de prueba
-    @GetMapping("/test")
-    public ResponseEntity<Map<String, Object>> test() {
-        return ResponseEntity.ok(Map.of(
-            "status", "PdIController working",
-            "service", "procesador-pdi",
-            "endpoints", List.of(
-                "POST /pdis - Create PdI",
-                "GET /pdis?hecho={id} - Get PdIs by hecho",
-                "GET /pdis/{id} - Get PdI by ID",
-                "GET /pdis/test - This test endpoint"
-            )
-        ));
     }
 }
