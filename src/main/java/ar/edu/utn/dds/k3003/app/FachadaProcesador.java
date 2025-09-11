@@ -23,7 +23,6 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
     @Autowired(required = false) 
     private ServicesClient servicesClient;
 
-    // MÉTRICAS DE DATADOG (reemplaza los contadores manuales)
     @Autowired
     private Counter pdisProcessedCounter;
     
@@ -120,7 +119,6 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
         e.printStackTrace();
         return null; 
      } finally {
-        // Registra el tiempo transcurrido
         sample.stop(processingTimer);
         }
     }
@@ -143,7 +141,6 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
     public Map<String, Object> getEstadisticas() {
         Map<String, Object> stats = new HashMap<>();
         
-        // MÉTRICAS DESDE DATADOG (en lugar de contadores manuales)
         stats.put("totalProcesadas", pdisProcessedCounter.count());
         stats.put("totalRechazadas", pdisRejectedCounter.count());
         stats.put("totalErrores", pdisErrorCounter.count());

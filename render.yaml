@@ -20,3 +20,10 @@ services:
         value: false
       - key: JAVA_TOOL_OPTIONS
         value: -Xmx512m
+      # Datadog 
+      - key: DD_API_KEY
+        value: 63fc749a6e650220161320fca53054ac
+      - key: DD_ENV
+        value: production
+      - key: DD_SERVICE
+        value: procesador-pdi
