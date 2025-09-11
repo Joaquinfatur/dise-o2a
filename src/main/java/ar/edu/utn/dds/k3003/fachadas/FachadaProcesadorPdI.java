@@ -31,8 +31,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
     @Override
     public PdIDTO procesar(PdIDTO dto) {
         PdILocalDTO localDTO = PdIDTOMapper.toLocalDto(dto);
-        
-        // Verificar si ya existe
+     
         Optional<PdIEntity> existente = repository.findById(Integer.parseInt(localDTO.getId()));
         if (existente.isPresent()) {
             PdI pdi = PdIMapper.toModel(existente.get());

@@ -18,14 +18,14 @@ public class PdIDTOMapper {
     }
 
     public static PdILocalDTO toLocalDto(PdIDTO facades) {
-        return new PdILocalDTO(
-            facades.id(),
-            facades.hechoId(),
-            facades.contenido(),
-            null,
-            null,
-            null,
-            facades.etiquetas()      
-        );
+    return new PdILocalDTO(
+        facades.id(),
+        facades.hechoId(),  
+        facades.contenido(),
+        null,
+        null,
+        null,
+        facades.etiquetas()      
+    );
     }
 }
