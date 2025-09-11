@@ -27,6 +27,7 @@ public class PdIController {
             "timestamp", System.currentTimeMillis(),
             "endpoints", List.of(
                 "POST /pdis - Create PdI",
+                "GET /pdis - Get all PdIs",
                 "GET /pdis?hecho={id} - Get PdIs by hecho",
                 "GET /pdis/{id} - Get PdI by ID",
                 "GET /pdis/test - This test endpoint",
@@ -91,7 +92,7 @@ public class PdIController {
             System.out.println("=== GET /pdis/" + id + " ===");
             
             // Validar que el ID no sea un endpoint específico
-            if ("test".equals(id) || "stats".equals(id)) {
+            if ("test".equals(id) || "stats".equals(id) || "all".equals(id)) {
                 return ResponseEntity.notFound().build();
             }
             
@@ -113,7 +114,7 @@ public class PdIController {
         }
     }
 
-    // GET /pdis 
+    // GET /pdis - ACTUALIZADO para obtener todas o por hecho
     @GetMapping
     public ResponseEntity<?> obtenerPdIs(@RequestParam(name = "hecho", required = false) String hecho) {
         try {
@@ -121,17 +122,17 @@ public class PdIController {
             System.out.println("Parámetro hecho: " + hecho);
             
             if (hecho != null && !hecho.trim().isEmpty()) {
+                // Buscar por hecho específico
                 List<PdIDTO> pdis = fachada.buscarPorHecho(hecho);
                 System.out.println("Encontradas " + pdis.size() + " PdIs para hecho " + hecho);
                 return ResponseEntity.ok(pdis);
             } else {
-                return ResponseEntity.badRequest()
-                    .body(Map.of(
-                        "error", "Parameter 'hecho' is required",
-                        "usage", "GET /pdis?hecho={hechoId}",
-                        "example", "GET /pdis?hecho=999"
-                    ));
+                // Buscar todas las PdIs
+                List<PdIDTO> todasLasPdis = fachada.buscarTodas();
+                System.out.println("Encontradas " + todasLasPdis.size() + " PdIs en total");
+                return ResponseEntity.ok(todasLasPdis);
             }
+            
         } catch (Exception e) {
             System.err.println("Error obteniendo PdIs para hecho " + hecho + ": " + e.getMessage());
             e.printStackTrace();
@@ -140,6 +141,28 @@ public class PdIController {
                     "error", "Internal server error",
                     "hecho", hecho
                 ));
+        }
+    }
+
+    // GET /pdis/all - Endpoint alternativo explícito
+    @GetMapping("/all")
+    public ResponseEntity<?> obtenerTodasLasPdIs() {
+        try {
+            System.out.println("=== GET /pdis/all ===");
+            
+            List<PdIDTO> todasLasPdis = fachada.buscarTodas();
+            System.out.println("Encontradas " + todasLasPdis.size() + " PdIs en total");
+            
+            return ResponseEntity.ok(Map.of(
+                "total", todasLasPdis.size(),
+                "pdis", todasLasPdis
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("Error obteniendo todas las PdIs: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error retrieving all PdIs"));
         }
     }
 }

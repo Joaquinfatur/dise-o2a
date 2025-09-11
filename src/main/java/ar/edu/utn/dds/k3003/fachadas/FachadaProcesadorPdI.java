@@ -28,6 +28,29 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
         this.fachadaSolicitudes = fachadaSolicitudes;
     }
 
+    public List<PdIDTO> buscarTodas() {
+    System.out.println("=== Buscando todas las PdIs ===");
+    
+    List<PdIEntity> entities = repository.findAll();
+    System.out.println("Encontradas " + entities.size() + " entidades en la base de datos");
+    
+    return entities.stream()
+        .map(entity -> {
+            PdI pdi = PdIMapper.toModel(entity);
+            PdILocalDTO localDTO = new PdILocalDTO(
+                String.valueOf(entity.getId()),
+                entity.getHechoId() != null ? String.valueOf(entity.getHechoId()) : null,
+                pdi.getContenido(),
+                pdi.getUbicacion(),
+                pdi.getFecha(),
+                pdi.getUsuarioId(),
+                pdi.getEtiquetas()
+            );
+            return PdIDTOMapper.toFacadesDto(localDTO);
+        })
+        .collect(Collectors.toList());
+    }
+
     @Override
     public PdIDTO procesar(PdIDTO dto) {
         PdILocalDTO localDTO = PdIDTOMapper.toLocalDto(dto);
