@@ -6,21 +6,27 @@ services:
     buildCommand: mvn clean package -DskipTests
     startCommand: java -jar target/my-app-name-1.0-SNAPSHOT.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        value: jdbc:h2:mem:testdb
-      - key: SPRING_DATASOURCE_DRIVER_CLASS_NAME
-        value: org.h2.Driver
-      - key: SPRING_DATASOURCE_USERNAME
-        value: sa
-      - key: SPRING_DATASOURCE_PASSWORD
-        value: password
-      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
-        value: create-drop
+      - key: DATABASE_URL
+        value: postgres://user:password@host:5432/database
+      - key: DB_USERNAME
+        value: procesador_user
+      - key: DB_PASSWORD
+        value: password_from_render
+      - key: DDL_AUTO
+        value: update
+      - key: SHOW_SQL
+        value: false
       - key: SERVICES_ENABLED
         value: false
+      - key: FUENTES_SERVICE_URL
+        value: http://localhost:8081
+      - key: SOLICITUDES_SERVICE_URL
+        value: http://localhost:8082
+      - key: AGREGADOR_SERVICE_URL
+        value: http://localhost:8083
       - key: JAVA_TOOL_OPTIONS
         value: -Xmx512m
-      # Datadog 
+      # Datadog
       - key: DD_API_KEY
         value: 63fc749a6e650220161320fca53054ac
       - key: DD_ENV
