@@ -2,7 +2,11 @@ package ar.edu.utn.dds.k3003.controllers;
 
 import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI; // ← CAMBIO: Usar la fachada de BD
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -100,5 +104,20 @@ public class StatsController {
         "startTime", new java.util.Date(START_TIME).toString(),
         "currentTime", new java.util.Date().toString()
     ));
+    }
+    @Bean
+    public Gauge databasePdisGauge() {
+        MeterRegistry meterRegistry;
+        return Gauge.builder("procesador.database.pdis.real", this, obj -> {
+        try {
+            // Inyectar fachada si no está disponible
+            return fachada != null ? fachada.buscarTodas().size() : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+        })
+        .description("Real PdIs count from PostgreSQL database")
+        .tag("service", "procesador-pdi")
+        .register(meterRegistry);
     }
 }
