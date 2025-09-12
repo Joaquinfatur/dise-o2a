@@ -22,20 +22,12 @@ public class PdI {
     private LocalDateTime fecha;
     private String usuarioId;
 
-    public PdI(int id, String contenido, int hechoId) {
+    public PdI(int id, String contenido) {
         this.id = id;
         this.contenido = contenido;
         this.etiquetas = new ArrayList<>();
         this.procesado = false;
-        this.hechoId = hechoId;
-    }
-
-    public PdI(String id, String contenido, int hechoId) {
-        this.id = Integer.parseInt(id);
-        this.hechoId = hechoId;
-        this.contenido = contenido;
-        this.etiquetas = new ArrayList<>();
-        this.procesado = false;
+        this.hechoId = (Integer) null;
     }
 
     public void etiquetar(List<String> nuevasEtiquetas) {
@@ -46,7 +38,7 @@ public class PdI {
     }
 
     // Geters
-    public int getId() { return id; }
+    public Integer getId() {return id;}
     public String getContenido() { return contenido; }
     public List<String> getEtiquetas() { return new ArrayList<>(etiquetas); }
     public boolean isProcesado() { return procesado; }

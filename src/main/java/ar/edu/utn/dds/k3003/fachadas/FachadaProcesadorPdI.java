@@ -111,7 +111,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             
             // CREAR NUEVA PdI
             System.out.println("🆕 Creando nueva PdI...");
-            PdI nuevaPdi = new PdI(localDTO.getId(), localDTO.getContenido(),localDTO.getHechoId() );
+            PdI nuevaPdi = new PdI(Integer.parseInt(localDTO.getId()), localDTO.getContenido());
             nuevaPdi.etiquetar(List.of("Procesado", "Importante"));
             
             // Mapear a entidad
@@ -200,7 +200,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
         Optional<PdIEntity> entity = repository.findById(pdiId);
         
         if (entity.isEmpty()) {
-            System.err.println("PdI no encontrada con ID: " + id);
+            System.err.println(" PdI no encontrada con ID: " + id);
             throw new RuntimeException("PdI no encontrada con ID: " + id);
         }
         
