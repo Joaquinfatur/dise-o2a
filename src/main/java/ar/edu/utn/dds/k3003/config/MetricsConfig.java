@@ -9,9 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Configuration
 public class MetricsConfig {
-
     @Autowired
-    private MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry = null;
 
     @Bean
     public Counter pdisProcessedCounter() {
