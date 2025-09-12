@@ -111,7 +111,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             
             // CREAR NUEVA PdI
             System.out.println("🆕 Creando nueva PdI...");
-            PdI nuevaPdi = new PdI(localDTO.getId(), localDTO.getContenido());
+            PdI nuevaPdi = new PdI(localDTO.getId(), localDTO.getContenido(),localDTO.getHechoId() != null ? Integer.parseInt(localDTO.getHechoId()) : 0);
             nuevaPdi.etiquetar(List.of("Procesado", "Importante"));
             
             // Mapear a entidad

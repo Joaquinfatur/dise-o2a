@@ -16,7 +16,7 @@ public class PdIMapper {
     }
 
     public static PdI toModel(PdIEntity entity) {
-        PdI pdi = new PdI(entity.getId(), entity.getContenido());
+        PdI pdi = new PdI(entity.getId(), entity.getContenido(), entity.getHechoId() != null ? entity.getHechoId() : 0);
         pdi.setHechoId(entity.getHechoId());
         
         if (entity.getEtiquetas() != null && !entity.getEtiquetas().isEmpty()) {

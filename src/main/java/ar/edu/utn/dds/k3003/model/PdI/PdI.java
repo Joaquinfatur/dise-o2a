@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Entity
 public class PdI {
-    
+
     @Id
     private int id;
     private String contenido;
@@ -22,17 +22,17 @@ public class PdI {
     private LocalDateTime fecha;
     private String usuarioId;
 
-    public PdI(int id, String contenido) {
+    public PdI(int id, String contenido, int hechoId) {
         this.id = id;
         this.contenido = contenido;
         this.etiquetas = new ArrayList<>();
         this.procesado = false;
-        this.hechoId = 0;
+        this.hechoId = hechoId;
     }
 
-    public PdI(String id, String contenido) {
+    public PdI(String id, String contenido, int hechoId) {
         this.id = Integer.parseInt(id);
-        this.hechoId = 0;
+        this.hechoId = hechoId;
         this.contenido = contenido;
         this.etiquetas = new ArrayList<>();
         this.procesado = false;
