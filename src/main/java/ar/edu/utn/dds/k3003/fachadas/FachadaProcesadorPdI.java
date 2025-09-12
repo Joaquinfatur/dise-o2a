@@ -80,11 +80,11 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
         System.out.println("Contenido recibido: " + dto.contenido());
         
         try {
-            // VALIDACIÓN 1: Contenido no puede estar vacío
+            // Contenido no puede estar vacío
             if (dto.contenido() == null || dto.contenido().trim().isEmpty()) {
                 if (pdisRejectedCounter != null) {
                     pdisRejectedCounter.increment();
-                    System.out.println("❌ PdI rechazada: contenido vacío. Contador rechazadas: " + pdisRejectedCounter.count());
+                    System.out.println("PdI rechazada: contenido vacío. Contador rechazadas: " + pdisRejectedCounter.count());
                 }
                 return null;
             }
@@ -95,7 +95,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             // VALIDACIÓN 2: Verificar si ya existe
             Optional<PdIEntity> existente = repository.findById(Integer.parseInt(localDTO.getId()));
             if (existente.isPresent()) {
-                System.out.println("✅ PdI ya existe, devolviendo existente (sin incrementar contador)");
+                System.out.println("PdI ya existe, devolviendo existente ");
                 PdI pdi = PdIMapper.toModel(existente.get());
                 PdILocalDTO result = new PdILocalDTO(
                     String.valueOf(pdi.getId()),
@@ -111,7 +111,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             
             // CREAR NUEVA PdI
             System.out.println("🆕 Creando nueva PdI...");
-            PdI nuevaPdi = new PdI(localDTO.getId(), localDTO.getContenido(),localDTO.getHechoId() != null ? Integer.parseInt(localDTO.getHechoId()) : 0);
+            PdI nuevaPdi = new PdI(localDTO.getId(), localDTO.getContenido(),localDTO.getHechoId() );
             nuevaPdi.etiquetar(List.of("Procesado", "Importante"));
             
             // Mapear a entidad
@@ -200,7 +200,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
         Optional<PdIEntity> entity = repository.findById(pdiId);
         
         if (entity.isEmpty()) {
-            System.err.println("❌ PdI no encontrada con ID: " + id);
+            System.err.println("PdI no encontrada con ID: " + id);
             throw new RuntimeException("PdI no encontrada con ID: " + id);
         }
         
