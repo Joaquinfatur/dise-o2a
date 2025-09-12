@@ -4,8 +4,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+@Entity
 public class PdI {
     
+    @Id
     private int id;
     private String contenido;
     private List<String> etiquetas;
