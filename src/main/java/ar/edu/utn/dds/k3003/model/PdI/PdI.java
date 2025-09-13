@@ -27,9 +27,18 @@ public class PdI {
         this.contenido = contenido;
         this.etiquetas = new ArrayList<>();
         this.procesado = false;
-        this.hechoId = (Integer) null;
+        this.hechoId = 0;
     }
 
+
+    public PdI(int id, String contenido, int hechoId) {
+        this.id = id;
+        this.contenido = contenido;
+        this.etiquetas = new ArrayList<>();
+        this.procesado = false;
+        this.hechoId = hechoId;
+    }
+    
     public void etiquetar(List<String> nuevasEtiquetas) {
         if (!procesado && nuevasEtiquetas != null) {
             etiquetas.addAll(nuevasEtiquetas);

@@ -129,7 +129,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
                 pdisProcessedCounter.increment();
                 System.out.println("📊 ✅ Contador incrementado: " + pdisProcessedCounter.count());
             } else {
-                System.err.println("📊 ❌ pdisProcessedCounter es NULL");
+                System.err.println("pdisProcessedCounter es NULL");
             }
             
             // Crear respuesta

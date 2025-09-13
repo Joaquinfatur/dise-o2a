@@ -83,7 +83,7 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
             );
         }
          
-        PdI nuevaPieza = new PdI(piezaDTO.getId(), piezaDTO.getContenido(),piezaDTO.getHechoId() != null ? Integer.parseInt(piezaDTO.getHechoId()) : 0);
+        PdI nuevaPieza = new PdI(Integer.parseInt(piezaDTO.getId()), piezaDTO.getContenido());
         
         if (piezaDTO.getHechoId() != null) {
             nuevaPieza.setHechoId(Integer.parseInt(piezaDTO.getHechoId()));
