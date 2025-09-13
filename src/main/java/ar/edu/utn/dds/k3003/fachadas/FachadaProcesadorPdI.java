@@ -13,6 +13,7 @@ import io.micrometer.core.instrument.Timer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -74,7 +75,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
         }
         
         System.out.println("=== PROCESAR PdI ===");
-        System.out.println("🔍 MÉTODO LLAMADO: FachadaProcesadorPdI.procesar()");
+        System.out.println("MÉTODO LLAMADO: FachadaProcesadorPdI.procesar()");
         System.out.println("ID recibido: " + dto.id());
         System.out.println("HechoId recibido: " + dto.hechoId());
         System.out.println("Contenido recibido: " + dto.contenido());
@@ -95,7 +96,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             // VALIDACIÓN 2: Verificar si ya existe
             Optional<PdIEntity> existente = repository.findById(Integer.parseInt(localDTO.getId()));
             if (existente.isPresent()) {
-                System.out.println("PdI ya existe, devolviendo existente ");
+                System.out.println("PdI ya existe, devolviendo existente");
                 PdI pdi = PdIMapper.toModel(existente.get());
                 PdILocalDTO result = new PdILocalDTO(
                     String.valueOf(pdi.getId()),
@@ -110,9 +111,28 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             }
             
             // CREAR NUEVA PdI
-            System.out.println("🆕 Creando nueva PdI...");
-            PdI nuevaPdi = new PdI(Integer.parseInt(localDTO.getId()), localDTO.getContenido());
-            nuevaPdi.etiquetar(List.of("Procesado", "Importante"));
+            System.out.println("Creando nueva PdI...");
+
+            // Preparar TODAS las etiquetas ANTES de crear la PdI
+            List<String> etiquetasFinales = new ArrayList<>();
+
+            // Agregar etiquetas del usuario si existen
+            if (localDTO.getEtiquetas() != null && !localDTO.getEtiquetas().isEmpty()) {
+                etiquetasFinales.addAll(localDTO.getEtiquetas());
+            }
+
+            // Agregar etiquetas automáticas 
+            etiquetasFinales.add("Procesado");
+            if (!etiquetasFinales.contains("Importante")) {
+                etiquetasFinales.add("Importante");
+            }
+
+            // Crear PdI con hechoId
+            int hechoId = (localDTO.getHechoId() != null) ? Integer.parseInt(localDTO.getHechoId()) : 0;
+            PdI nuevaPdi = new PdI(Integer.parseInt(localDTO.getId()), localDTO.getContenido(), hechoId);
+
+            // Etiquetar UNA SOLA VEZ con todas las etiquetas
+            nuevaPdi.etiquetar(etiquetasFinales);
             
             // Mapear a entidad
             PdIEntity entity = PdIMapper.toEntity(nuevaPdi);
@@ -122,12 +142,12 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             
             // GUARDAR EN BASE DE DATOS
             PdIEntity saved = repository.save(entity);
-            System.out.println("💾 PdI guardada en BD con ID: " + saved.getId());
+            System.out.println("PdI guardada en BD con ID: " + saved.getId());
             
-            // ✅ INCREMENTAR CONTADOR DE PROCESADAS
+            // INCREMENTAR CONTADOR DE PROCESADAS
             if (pdisProcessedCounter != null) {
                 pdisProcessedCounter.increment();
-                System.out.println("📊 ✅ Contador incrementado: " + pdisProcessedCounter.count());
+                System.out.println("Contador incrementado: " + pdisProcessedCounter.count());
             } else {
                 System.err.println("pdisProcessedCounter es NULL");
             }
@@ -144,17 +164,17 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
                 savedPdi.getEtiquetas()
             );
             
-            System.out.println("✅ PdI procesada exitosamente: " + saved.getId());
+            System.out.println("PdI procesada exitosamente: " + saved.getId());
             return PdIDTOMapper.toFacadesDto(result);
             
         } catch (Exception e) {
             // INCREMENTAR CONTADOR DE ERRORES
             if (pdisErrorCounter != null) {
                 pdisErrorCounter.increment();
-                System.err.println("📊 ❌ Error counter incrementado: " + pdisErrorCounter.count());
+                System.err.println("Error counter incrementado: " + pdisErrorCounter.count());
             }
             
-            System.err.println("❌ Error procesando PdI: " + e.getMessage());
+            System.err.println("Error procesando PdI: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Error procesando PdI", e);
             
@@ -200,11 +220,11 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
         Optional<PdIEntity> entity = repository.findById(pdiId);
         
         if (entity.isEmpty()) {
-            System.err.println(" PdI no encontrada con ID: " + id);
+            System.err.println("PdI no encontrada con ID: " + id);
             throw new RuntimeException("PdI no encontrada con ID: " + id);
         }
         
-        System.out.println("✅ PdI encontrada: " + entity.get().getId());
+        System.out.println("PdI encontrada: " + entity.get().getId());
         
         PdI pdi = PdIMapper.toModel(entity.get());
         PdILocalDTO localDTO = new PdILocalDTO(
@@ -223,9 +243,9 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
     // MÉTODO PARA VERIFICAR ESTADO DE MÉTRICAS
     public void verificarMetricas() {
         System.out.println("=== VERIFICACIÓN MÉTRICAS ===");
-        System.out.println("pdisProcessedCounter: " + (pdisProcessedCounter != null ? "✅ OK (" + pdisProcessedCounter.count() + ")" : "❌ NULL"));
-        System.out.println("pdisRejectedCounter: " + (pdisRejectedCounter != null ? "✅ OK (" + pdisRejectedCounter.count() + ")" : "❌ NULL"));
-        System.out.println("pdisErrorCounter: " + (pdisErrorCounter != null ? "✅ OK (" + pdisErrorCounter.count() + ")" : "❌ NULL"));
-        System.out.println("processingTimer: " + (processingTimer != null ? "✅ OK" : "❌ NULL"));
+        System.out.println("pdisProcessedCounter: " + (pdisProcessedCounter != null ? "OK (" + pdisProcessedCounter.count() + ")" : "NULL"));
+        System.out.println("pdisRejectedCounter: " + (pdisRejectedCounter != null ? "OK (" + pdisRejectedCounter.count() + ")" : "NULL"));
+        System.out.println("pdisErrorCounter: " + (pdisErrorCounter != null ? "OK (" + pdisErrorCounter.count() + ")" : "NULL"));
+        System.out.println("processingTimer: " + (processingTimer != null ? "OK" : "NULL"));
     }
 }
