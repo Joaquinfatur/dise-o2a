@@ -72,7 +72,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             sample = Timer.start();
         }
         
-        System.out.println("=== PROCESAR PdI - ENTREGA 4 ===");
+        System.out.println("=== PROCESAR PdI===");
         System.out.println("ID recibido: " + dto.id());
         System.out.println("HechoId recibido: " + dto.hechoId());
         System.out.println("Contenido recibido: " + dto.contenido());
