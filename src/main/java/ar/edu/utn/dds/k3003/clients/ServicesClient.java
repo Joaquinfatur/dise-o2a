@@ -74,7 +74,7 @@ public class ServicesClient {
                     .uri(solicitudesUrl + "/health")
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(3))
+                    .timeout(Duration.ofSeconds(15))
                     .block();
             
             return response != null;
@@ -99,7 +99,7 @@ public class ServicesClient {
                     .uri(solicitudesUrl + "/solicitudes?hecho=" + hechoId)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(5))
+                    .timeout(Duration.ofSeconds(15))
                     .block();
             
             
@@ -129,7 +129,7 @@ public class ServicesClient {
                     .uri(fuentesUrl + "/hecho/" + hechoId)
                     .retrieve()
                     .bodyToMono(Map.class)
-                    .timeout(Duration.ofSeconds(5))
+                    .timeout(Duration.ofSeconds(15))
                     .block();
         } catch (WebClientResponseException e) {
             if (e.getStatusCode().is4xxClientError()) {
@@ -240,7 +240,7 @@ public class ServicesClient {
                     .uri(url)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(3))
+                    .timeout(Duration.ofSeconds(15))
                     .block();
             return "UP";
         } catch (Exception e) {
