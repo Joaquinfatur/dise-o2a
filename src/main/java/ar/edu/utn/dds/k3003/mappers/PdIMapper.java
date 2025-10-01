@@ -12,28 +12,25 @@ public class PdIMapper {
      */
     public static PdIEntity toEntity(PdI pdi) {
         PdIEntity entity = new PdIEntity();
-        
-        // entity.setId() - Auto generado
+    
         entity.setHechoId(pdi.getHechoId()); 
         entity.setContenido(pdi.getContenido());
         entity.setProcesado(pdi.isProcesado());
-        
-        // Etiquetas
+    
+    
         if (pdi.getEtiquetasNuevas() != null && !pdi.getEtiquetasNuevas().isEmpty()) {
-            entity.setEtiquetasNuevas(pdi.getEtiquetasNuevas());
-           
-            entity.setEtiquetas(new java.util.ArrayList<>());
+        entity.setEtiquetasNuevas(pdi.getEtiquetasNuevas());  
+        entity.setEtiquetas(new java.util.ArrayList<>());
         } else {
-           
-            entity.setEtiquetas(pdi.getEtiquetas());
-            entity.setEtiquetasNuevas(new java.util.ArrayList<>());
+        entity.setEtiquetas(pdi.getEtiquetas());
+        entity.setEtiquetasNuevas(new java.util.ArrayList<>());
         }
-        
-        
+    
+     // Campos de imagen
         entity.setImagenUrl(pdi.getImagenUrl());
         entity.setOcrResultado(pdi.getOcrResultado());
         entity.setEtiquetadoResultado(pdi.getEtiquetadoResultado());
-        
+    
         return entity;
     }
 

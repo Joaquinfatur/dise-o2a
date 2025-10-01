@@ -66,53 +66,6 @@ public class ImageProcessingService {
         return null;
     }
 
-    private void procesarImagenAsincrona(PdI pdi, String imagenUrl) {
-        
-        CompletableFuture<String> ocrFuture = CompletableFuture.supplyAsync(() -> {
-            try {
-                String resultado = servicesClient.procesarOCR(imagenUrl);
-                System.out.println("OCR completado para PDI " + pdi.getId());
-                return resultado;
-            } catch (Exception e) {
-                System.err.println("Error en OCR: " + e.getMessage());
-                return "Error OCR: " + e.getMessage();
-            }
-        });
-
-        CompletableFuture<String> etiquetadoFuture = CompletableFuture.supplyAsync(() -> {
-            try {
-                String resultado = servicesClient.procesarEtiquetado(imagenUrl);
-                System.out.println("Etiquetado completado para PDI " + pdi.getId());
-                return resultado;
-            } catch (Exception e) {
-                System.err.println("Error en etiquetado: " + e.getMessage());
-                return "Error etiquetado: " + e.getMessage();
-            }
-        });
-
-        
-        CompletableFuture.allOf(ocrFuture, etiquetadoFuture).thenRun(() -> {
-            try {
-                String ocrResultado = ocrFuture.get();
-                String etiquetadoResultado = etiquetadoFuture.get();
-                
-                
-                pdi.setOcrResultado(ocrResultado);
-                pdi.setEtiquetadoResultado(etiquetadoResultado);
-                
-                
-                List<String> etiquetasAutomaticas = generarEtiquetasAutomaticas(ocrResultado, etiquetadoResultado);
-                pdi.etiquetarNuevo(etiquetasAutomaticas);
-                
-                System.out.println("Procesamiento de imagen completado para PDI " + pdi.getId());
-                System.out.println("Etiquetas generadas: " + etiquetasAutomaticas);
-                
-            } catch (InterruptedException | ExecutionException e) {
-                System.err.println("Error procesando resultados de imagen: " + e.getMessage());
-            }
-        });
-    }
-
     private List<String> generarEtiquetasAutomaticas(String ocrResultado, String etiquetadoResultado) {
         List<String> etiquetas = new ArrayList<>();
         
@@ -239,32 +192,32 @@ public class ImageProcessingService {
         etiquetas.add("ProcesadoTexto");
         pdi.etiquetarNuevo(etiquetas);
     }
-    // Procesamiento síncrono
+    // Procesamiento síncrono 
     private void procesarImagenSincrona(PdI pdi, String imagenUrl) {
-        System.out.println("Procesando imagen de forma síncrona...");
+    System.out.println("Procesando imagen de forma síncrona...");
     
-        try {
-            // OCR
-            String ocrResultado = servicesClient.procesarOCR(imagenUrl);
-            System.out.println("OCR completado para PDI " + pdi.getId());
-            pdi.setOcrResultado(ocrResultado);
+    try {
+        // OCR
+        String ocrResultado = servicesClient.procesarOCR(imagenUrl);
+        System.out.println("OCR completado para PDI " + pdi.getId());
+        pdi.setOcrResultado(ocrResultado);
         
-            // Etiquetado
-            String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
-            System.out.println("Etiquetado completado para PDI " + pdi.getId());
-            pdi.setEtiquetadoResultado(etiquetadoResultado);
+        // Etiquetado
+        String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
+        System.out.println("Etiquetado completado para PDI " + pdi.getId());
+        pdi.setEtiquetadoResultado(etiquetadoResultado);
         
-            // Generar etiquetas
-            List<String> etiquetasAutomaticas = generarEtiquetasAutomaticas(ocrResultado, etiquetadoResultado);
-            pdi.etiquetarNuevo(etiquetasAutomaticas);
+        // Generar etiquetas
+        List<String> etiquetasAutomaticas = generarEtiquetasAutomaticas(ocrResultado, etiquetadoResultado);
+        pdi.etiquetarNuevo(etiquetasAutomaticas);
         
-            System.out.println("Procesamiento de imagen completado para PDI " + pdi.getId());
-            System.out.println("Etiquetas generadas: " + etiquetasAutomaticas);
+        System.out.println("Procesamiento de imagen completado para PDI " + pdi.getId());
+        System.out.println("Etiquetas generadas: " + etiquetasAutomaticas);
         
-        } catch (Exception e) {
-            System.err.println("Error procesando imagen: " + e.getMessage());
+    } catch (Exception e) {
+        System.err.println("Error procesando imagen: " + e.getMessage());
         
-            pdi.etiquetarNuevo(List.of("ConImagen", "ErrorProcesamiento"));
-        }
+        pdi.etiquetarNuevo(List.of("ConImagen", "ErrorProcesamiento"));
+    }
     }
 }
