@@ -5,15 +5,12 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Configuration
 public class MetricsConfig {
-    @Autowired
-    private final MeterRegistry meterRegistry = null;
 
     @Bean
-    public Counter pdisProcessedCounter() {
+    public Counter pdisProcessedCounter(MeterRegistry meterRegistry) {
         return Counter.builder("procesador.pdis.processed.total")
                 .description("Total number of PdIs processed")
                 .tag("service", "procesador-pdi")
@@ -21,7 +18,7 @@ public class MetricsConfig {
     }
 
     @Bean
-    public Counter pdisErrorCounter() {
+    public Counter pdisErrorCounter(MeterRegistry meterRegistry) {
         return Counter.builder("procesador.pdis.errors.total")
                 .description("Total number of errors processing PdIs")
                 .tag("service", "procesador-pdi")
@@ -29,7 +26,7 @@ public class MetricsConfig {
     }
 
     @Bean
-    public Counter pdisRejectedCounter() {
+    public Counter pdisRejectedCounter(MeterRegistry meterRegistry) {
         return Counter.builder("procesador.pdis.rejected.total")
                 .description("Total number of rejected PdIs")
                 .tag("service", "procesador-pdi")
@@ -37,7 +34,7 @@ public class MetricsConfig {
     }
 
     @Bean
-    public Timer processingTimer() {
+    public Timer processingTimer(MeterRegistry meterRegistry) {
         return Timer.builder("procesador.pdis.processing.duration")
                 .description("Time taken to process PdIs")
                 .tag("service", "procesador-pdi")
@@ -45,7 +42,7 @@ public class MetricsConfig {
     }
 
     @Bean
-    public Counter httpRequestsCounter() {
+    public Counter httpRequestsCounter(MeterRegistry meterRegistry) {
         return Counter.builder("procesador.http.requests.total")
                 .description("Total HTTP requests")
                 .tag("service", "procesador-pdi")
@@ -53,7 +50,7 @@ public class MetricsConfig {
     }
 
     @Bean
-    public Counter databaseOperationsCounter() {
+    public Counter databaseOperationsCounter(MeterRegistry meterRegistry) {
         return Counter.builder("procesador.database.operations.total")
                 .description("Total database operations")
                 .tag("service", "procesador-pdi")

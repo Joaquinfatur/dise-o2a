@@ -105,22 +105,19 @@ public class StatsController {
         "currentTime", new java.util.Date().toString()
     ));
     }
-    @Autowired
-    private MeterRegistry meterRegistry;
     
-    @Autowired
     @Bean
-    public Gauge databasePdisGauge() {
-        return Gauge.builder("procesador.database.pdis.real", this, obj -> {
-            try {
-                return fachada != null ? fachada.buscarTodas().size() : 0;
-            } catch (Exception e) {
-                return 0;
-            }
-        })
-        .description("Real PdIs count from PostgreSQL database")
-        .tag("service", "procesador-pdi")
-        .tag("env", "prod")
-        .register(meterRegistry);
+    public Gauge databasePdisGauge(MeterRegistry meterRegistry) {
+    return Gauge.builder("procesador.database.pdis.real", this, obj -> {
+        try {
+            return fachada != null ? fachada.buscarTodas().size() : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    })
+    .description("Real PdIs count from PostgreSQL database")
+    .tag("service", "procesador-pdi")
+    .tag("env", "prod")
+    .register(meterRegistry);
     }
 }
