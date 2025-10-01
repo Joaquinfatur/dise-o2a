@@ -33,26 +33,22 @@ public class ImageProcessingService {
         System.out.println("=== PROCESANDO PDI COMPLETA ===");
         System.out.println("PDI ID: " + pdi.getId());
         System.out.println("Contenido: " + pdi.getContenido());
-        
-        
+    
         String imagenUrl = extraerImagenUrl(pdi);
-        
+    
         if (imagenUrl != null) {
             System.out.println("URL de imagen encontrada: " + imagenUrl);
-            pdi.setImagenUrl(imagenUrl);
-            
-            
-            procesarImagenAsincrona(pdi, imagenUrl);
+         pdi.setImagenUrl(imagenUrl);
+        
+        // CAMBIO: PROCESAMIENTO SÍNCRONO EN LUGAR DE ASÍNCRONO
+        procesarImagenSincrona(pdi, imagenUrl);
         } else {
-            System.out.println("No se encontró URL de imagen, procesando solo texto");
-            
-            agregarEtiquetasPorContenido(pdi);
+        System.out.println("No se encontró URL de imagen, procesando solo texto");
+        agregarEtiquetasPorContenido(pdi);
         }
-        
-        
+    
         pdi.setProcesado(true);
     }
-
     private String extraerImagenUrl(PdI pdi) {
         if (pdi.getImagenUrl() != null && !pdi.getImagenUrl().trim().isEmpty()) {
             return pdi.getImagenUrl(); 
@@ -242,5 +238,33 @@ public class ImageProcessingService {
         
         etiquetas.add("ProcesadoTexto");
         pdi.etiquetarNuevo(etiquetas);
+    }
+    // Procesamiento síncrono
+    private void procesarImagenSincrona(PdI pdi, String imagenUrl) {
+        System.out.println("Procesando imagen de forma síncrona...");
+    
+        try {
+            // OCR
+            String ocrResultado = servicesClient.procesarOCR(imagenUrl);
+            System.out.println("OCR completado para PDI " + pdi.getId());
+            pdi.setOcrResultado(ocrResultado);
+        
+            // Etiquetado
+            String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
+            System.out.println("Etiquetado completado para PDI " + pdi.getId());
+            pdi.setEtiquetadoResultado(etiquetadoResultado);
+        
+            // Generar etiquetas
+            List<String> etiquetasAutomaticas = generarEtiquetasAutomaticas(ocrResultado, etiquetadoResultado);
+            pdi.etiquetarNuevo(etiquetasAutomaticas);
+        
+            System.out.println("Procesamiento de imagen completado para PDI " + pdi.getId());
+            System.out.println("Etiquetas generadas: " + etiquetasAutomaticas);
+        
+        } catch (Exception e) {
+            System.err.println("Error procesando imagen: " + e.getMessage());
+        
+            pdi.etiquetarNuevo(List.of("ConImagen", "ErrorProcesamiento"));
+        }
     }
 }

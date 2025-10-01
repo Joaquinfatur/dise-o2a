@@ -175,27 +175,27 @@ public class ServicesClient {
      *Procesa imagen con etiquetador
      */
     public String procesarEtiquetado(String imageUrl) {
-        try {
-            if (labelingApiKey == null || labelingApiKey.trim().isEmpty()) {
-                System.err.println("Labeling API Key no configurada");
-                return "Etiquetado no disponible - API Key no configurada";
-            }
-
-            String response = webClient.get()
-                    .uri("https://api.apilayer.com/image_labeling/url?url=" + imageUrl)
-                    .header("apikey", labelingApiKey)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(10))
-                    .block();
-
-            System.out.println("Resultado etiquetado obtenido para imagen: " + imageUrl);
-            return response;
-            
-        } catch (Exception e) {
-            System.err.println("Error procesando etiquetado para imagen " + imageUrl + ": " + e.getMessage());
-            return "Error en etiquetado: " + e.getMessage();
+    try {
+        if (labelingApiKey == null || labelingApiKey.trim().isEmpty()) {
+            System.err.println("Labeling API Key no configurada");
+            return "Etiquetado no disponible - API Key no configurada";
         }
+
+        String response = webClient.get()
+                .uri("https://api.apilayer.com/image_labeling/url?url=" + imageUrl)
+                .header("apikey", labelingApiKey)
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(30))  // ← CAMBIAR de 10 a 30
+                .block();
+
+        System.out.println("Resultado etiquetado obtenido para imagen: " + imageUrl);
+        return response;
+        
+    } catch (Exception e) {
+        System.err.println("Error procesando etiquetado para imagen " + imageUrl + ": " + e.getMessage());
+        return "Error en etiquetado: " + e.getMessage();
+    }
     }
 
     public void notifyAggregator(String hechoId, List<String> pdiIds) {
