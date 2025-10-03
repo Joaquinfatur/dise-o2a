@@ -17,18 +17,20 @@ public class ServicesClient {
     @Value("${services.fuentes.url:http://localhost:8081}")
     private String fuentesUrl;
 
-    @Value("${services.solicitudes.url:http://localhost:8082}")
+    @Value("${services.solicitudes.url:https://two025-tp-entrega-3-solicitudes.onrender.com}")
     private String solicitudesUrl;
 
     @Value("${services.agregador.url:http://localhost:8083}")
     private String agregadorUrl;
 
-    
     @Value("${external.ocr.apikey:}")
     private String ocrApiKey;
     
     @Value("${external.labeling.apikey:}")
     private String labelingApiKey;
+
+    
+    public record HechoResponse(String hechoId, boolean activo) {}
 
     public ServicesClient() {
         this.webClient = WebClient.builder()
@@ -36,20 +38,17 @@ public class ServicesClient {
                 .build();
     }
 
-    /**
-     * Valida si el hecho existe y está activo
-     * Retorna true si el hecho está activo (sin solicitudes de eliminación)
-     */
+
     public boolean isHechoActivoYValido(String hechoId) {
         try {
-            
+            // Verifica en Fuentes que el hecho existe
             Map<String, Object> hecho = getHecho(hechoId);
             if (hecho == null) {
                 System.err.println("Hecho " + hechoId + " no existe en Fuentes");
                 return false;
             }
 
-            
+            // Verifica en Solicitudes que no tenga solicitudes de eliminación
             boolean tieneHecho = isHechoActivo(hechoId);
             if (!tieneHecho) {
                 System.err.println("Hecho " + hechoId + " tiene solicitudes de eliminación");
@@ -65,9 +64,6 @@ public class ServicesClient {
         }
     }
 
-    /**
-     * Verifica si el servicio de Solicitudes está disponible
-     */
     public boolean isSolicitudesServiceAvailable() {
         try {
             String response = webClient.get()
@@ -84,45 +80,30 @@ public class ServicesClient {
         }
     }
 
-    /**
-     * Verifica estado del hecho en solicitudes
-     */
     public boolean isHechoActivo(String hechoId) {
         try {
-            
-            if (!isSolicitudesServiceAvailable()) {
-                System.err.println("Servicio de Solicitudes no disponible - rechazando PDI");
-                return false;
-            }
-
-            String response = webClient.get()
-                    .uri(solicitudesUrl + "/solicitudes?hecho=" + hechoId)
+            HechoResponse response = webClient.get()
+                    .uri(solicitudesUrl + "/solicitudes/hecho/{id}/activo", hechoId)
                     .retrieve()
-                    .bodyToMono(String.class)
+                    .bodyToMono(HechoResponse.class)
                     .timeout(Duration.ofSeconds(15))
                     .block();
             
-            
-            boolean activo = response == null || response.equals("[]");
-            System.out.println("Hecho " + hechoId + " estado: " + (activo ? "ACTIVO" : "INACTIVO"));
-            return activo;
-            
-        } catch (WebClientResponseException e) {
-            if (e.getStatusCode().is4xxClientError()) {
-                System.err.println("Hecho " + hechoId + " no encontrado en solicitudes");
-                return true; 
+            if (response == null) {
+                System.err.println("Respuesta nula de Solicitudes para hecho " + hechoId);
+                return false;
             }
-            System.err.println("Error consultando estado del hecho " + hechoId + ": " + e.getMessage());
-            return false; 
+            
+            System.out.println("Hecho " + hechoId + " estado: " + (response.activo() ? "ACTIVO" : "INACTIVO"));
+            return response.activo();
+            
         } catch (Exception e) {
             System.err.println("Error consultando estado del hecho " + hechoId + ": " + e.getMessage());
             return false;
         }
     }
 
-    /**
-     *Obtiene información del hecho desde Fuentes
-     */
+
     public Map<String, Object> getHecho(String hechoId) {
         try {
             return webClient.get()
@@ -144,10 +125,6 @@ public class ServicesClient {
         }
     }
 
-
-    /**
-     * Procesa imagen con OCR
-     */
     public String procesarOCR(String imageUrl) {
         try {
             if (ocrApiKey == null || ocrApiKey.trim().isEmpty()) {
@@ -171,31 +148,29 @@ public class ServicesClient {
         }
     }
 
-    /**
-     *Procesa imagen con etiquetador
-     */
+
     public String procesarEtiquetado(String imageUrl) {
-    try {
-        if (labelingApiKey == null || labelingApiKey.trim().isEmpty()) {
-            System.err.println("Labeling API Key no configurada");
-            return "Etiquetado no disponible - API Key no configurada";
+        try {
+            if (labelingApiKey == null || labelingApiKey.trim().isEmpty()) {
+                System.err.println("Labeling API Key no configurada");
+                return "Etiquetado no disponible - API Key no configurada";
+            }
+
+            String response = webClient.get()
+                    .uri("https://api.apilayer.com/image_labeling/url?url=" + imageUrl)
+                    .header("apikey", labelingApiKey)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(30))
+                    .block();
+
+            System.out.println("Resultado etiquetado obtenido para imagen: " + imageUrl);
+            return response;
+            
+        } catch (Exception e) {
+            System.err.println("Error procesando etiquetado para imagen " + imageUrl + ": " + e.getMessage());
+            return "Error en etiquetado: " + e.getMessage();
         }
-
-        String response = webClient.get()
-                .uri("https://api.apilayer.com/image_labeling/url?url=" + imageUrl)
-                .header("apikey", labelingApiKey)
-                .retrieve()
-                .bodyToMono(String.class)
-                .timeout(Duration.ofSeconds(30))  // ← CAMBIAR de 10 a 30
-                .block();
-
-        System.out.println("Resultado etiquetado obtenido para imagen: " + imageUrl);
-        return response;
-        
-    } catch (Exception e) {
-        System.err.println("Error procesando etiquetado para imagen " + imageUrl + ": " + e.getMessage());
-        return "Error en etiquetado: " + e.getMessage();
-    }
     }
 
     public void notifyAggregator(String hechoId, List<String> pdiIds) {
@@ -221,9 +196,7 @@ public class ServicesClient {
         }
     }
 
-    /**
-     * Health check mejorado
-     */
+
     public Map<String, String> checkServicesHealth() {
         return Map.of(
             "fuentes", checkServiceHealth(fuentesUrl + "/health"),
