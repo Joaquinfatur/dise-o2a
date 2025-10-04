@@ -58,7 +58,7 @@ public class FachadaProcesadorTest {
             PdILocalDTO dto = new PdILocalDTO(1, 2, "Texto de prueba");
             procesador.procesarPdI(dto);
             
-            List<PdI> piezas = procesador.obtenerPdIsPorHecho(2);
+            List<PdI> piezas = procesador.obtenerPdIsPorHecho("2");
             System.out.println("Cantidad de piezas recibidas después de procesar: " + piezas.size());
             assertEquals(1, piezas.size());
         } catch (Exception e) {
