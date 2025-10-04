@@ -1,9 +1,10 @@
 package ar.edu.utn.dds.k3003.clients;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import org.springframework.http.MediaType; 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -161,26 +162,21 @@ public class ServicesClient {
     }
 
     public void notifyAggregator(String hechoId, List<String> pdiIds) {
-        try {
-            Map<String, Object> notification = Map.of(
-                "hechoId", hechoId,
-                "pdiIds", pdiIds,
-                "source", "procesador-pdi"
-            );
-
-            webClient.post()
-                    .uri(agregadorUrl + "/notifications/pdis")
-                    .bodyValue(notification)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .timeout(Duration.ofSeconds(5))
-                    .subscribe(
-                        result -> System.out.println("Agregador notificado exitosamente"),
-                        error -> System.err.println("Error notificando agregador: " + error.getMessage())
-                    );
-        } catch (Exception e) {
-            System.err.println("Error enviando notificación al agregador: " + e.getMessage());
-        }
+        Map<String, Object> notification = new HashMap<>();
+        notification.put("hechoId", hechoId);
+        notification.put("pdiIds", pdiIds);
+    
+    // Fire and forget - asíncrono
+        webClient.post()
+                .uri(agregadorUrl + "/notifications/pdis")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(notification)
+                .retrieve()
+                .bodyToMono(String.class)
+                .subscribe(
+                    result -> System.out.println("✓ Agregador notificado: " + hechoId),
+                    error -> System.err.println("✗ Error notificando agregador: " + error.getMessage())
+                );
     }
 
 
