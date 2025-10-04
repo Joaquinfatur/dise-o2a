@@ -133,16 +133,16 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             }
             
             
-            if (hechoId != null) {
-                try {
-                    servicesClient.notifyAggregator(
-                        String.valueOf(hechoId), 
-                        List.of(String.valueOf(saved.getId()))
-                    );
-                } catch (Exception e) {
-                    System.err.println("Error notificando agregador: " + e.getMessage());
-                }
+            if (hechoId != null && !hechoId.trim().isEmpty()) {
+            try {
+                 servicesClient.notifyAggregator(
+                    hechoId,  
+                 List.of(String.valueOf(saved.getId()))
+                );
+            } catch (Exception e) {
+                System.err.println("Error notificando agregador: " + e.getMessage());
             }
+        }
             
             System.out.println("PdI procesada exitosamente con análisis de imagen: " + saved.getId());
             return convertirEntityADTO(saved);

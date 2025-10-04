@@ -65,22 +65,6 @@ public class ServicesClient {
         }
     }
 
-    public boolean isSolicitudesServiceAvailable() {
-        try {
-            String response = webClient.get()
-                    .uri(solicitudesUrl)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(15))
-                    .block();
-            
-            return response != null;
-        } catch (Exception e) {
-            System.err.println("Servicio de Solicitudes no disponible: " + e.getMessage());
-            return false;
-        }
-    }
-
     public boolean isHechoActivo(String hechoId) {
         try {
             HechoResponse response = webClient.get()
