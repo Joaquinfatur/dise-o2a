@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -41,26 +42,27 @@ public class ServicesClient {
 
 
     public boolean isHechoActivoYValido(String hechoId) {
+        if (hechoId == null || hechoId.trim().isEmpty()) {
+        return false;
+        }
+    
         try {
-            // Verifica en Fuentes que el hecho existe
-            Map<String, Object> hecho = getHecho(hechoId);
+            Map<String, Object> hecho = webClient.get()
+                .uri(fuentesUrl + "/hechos/" + hechoId)
+                .retrieve()  // ← FALTABA ESTO
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .timeout(Duration.ofSeconds(15))
+                .block();
+        
             if (hecho == null) {
-                System.err.println("Hecho " + hechoId + " no existe en Fuentes");
-                return false;
+            return false;
             }
-
-            // Verifica en Solicitudes que no tenga solicitudes de eliminación
-            boolean tieneHecho = isHechoActivo(hechoId);
-            if (!tieneHecho) {
-                System.err.println("Hecho " + hechoId + " tiene solicitudes de eliminación");
-                return false;
-            }
-
-            System.out.println("Hecho " + hechoId + " es válido y activo");
-            return true;
-            
+        
+            Object estado = hecho.get("estado");
+            return estado != null && !"borrado".equals(estado.toString());
+        
         } catch (Exception e) {
-            System.err.println("Error validando hecho " + hechoId + ": " + e.getMessage());
+            System.err.println("Error obteniendo hecho " + hechoId + ": " + e.getMessage());
             return false;
         }
     }
