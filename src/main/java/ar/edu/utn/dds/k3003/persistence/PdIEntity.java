@@ -14,12 +14,11 @@ public class PdIEntity {
     private Integer id;
     
     @Column(name = "hecho_id")
-    private Integer hechoId; 
+    private String hechoId; // ← CAMBIO: de Integer a String
     
     @Column(columnDefinition = "TEXT")
     private String contenido;
 
-    
     @Column(name = "ubicacion")
     private String ubicacion;
     
@@ -29,13 +28,11 @@ public class PdIEntity {
     @Column(name = "usuario_id")
     private String usuarioId;
     
-    
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "pdi_etiquetas_deprecated", joinColumns = @JoinColumn(name = "pdi_id"))
     @Column(name = "etiqueta")
     private List<String> etiquetas = new ArrayList<>();
 
-    // NUEVOS CAMPOS PARA ENTREGA 4
     @Column(name = "imagen_url")
     private String imagenUrl;
     
@@ -53,10 +50,9 @@ public class PdIEntity {
     @Column(name = "procesado")
     private Boolean procesado = false;
 
-    
     public PdIEntity() {}
 
-    public PdIEntity(Integer hechoId, String contenido, List<String> etiquetas) {
+    public PdIEntity(String hechoId, String contenido, List<String> etiquetas) { // ← CAMBIO: parámetro String
         this.hechoId = hechoId;
         this.contenido = contenido;
         this.etiquetas = etiquetas != null ? new ArrayList<>(etiquetas) : new ArrayList<>();
@@ -64,7 +60,7 @@ public class PdIEntity {
         this.procesado = false;
     }
 
-    public PdIEntity(Integer id, Integer hechoId, String contenido, List<String> etiquetas) {
+    public PdIEntity(Integer id, String hechoId, String contenido, List<String> etiquetas) { // ← CAMBIO: parámetro String
         this.id = id;
         this.hechoId = hechoId;
         this.contenido = contenido;
@@ -73,8 +69,7 @@ public class PdIEntity {
         this.procesado = false;
     }
 
-    
-    public PdIEntity(Integer hechoId, String contenido, String imagenUrl, List<String> etiquetasNuevas) {
+    public PdIEntity(String hechoId, String contenido, String imagenUrl, List<String> etiquetasNuevas) { // ← CAMBIO: parámetro String
         this.hechoId = hechoId;
         this.contenido = contenido;
         this.imagenUrl = imagenUrl;
@@ -83,12 +78,11 @@ public class PdIEntity {
         this.procesado = false;
     }
 
-    
     public Integer getId() { 
         return id; 
     }
     
-    public Integer getHechoId() { 
+    public String getHechoId() { // ← CAMBIO: retorna String
         return hechoId; 
     }
     
@@ -96,7 +90,6 @@ public class PdIEntity {
         return contenido; 
     }
 
-    
     public String getUbicacion() {
         return ubicacion;
     }
@@ -114,7 +107,6 @@ public class PdIEntity {
         return etiquetas != null ? etiquetas : new ArrayList<>(); 
     }
 
-    
     public String getImagenUrl() {
         return imagenUrl;
     }
@@ -135,12 +127,11 @@ public class PdIEntity {
         return procesado;
     }
 
-    
     public void setId(Integer id) {
         this.id = id;
     }
 
-    public void setHechoId(Integer hechoId) {
+    public void setHechoId(String hechoId) { // ← CAMBIO: parámetro String
         this.hechoId = hechoId;
     }
 
@@ -148,7 +139,6 @@ public class PdIEntity {
         this.contenido = contenido;
     }
 
-    
     public void setUbicacion(String ubicacion) {
         this.ubicacion = ubicacion;
     }
@@ -166,7 +156,6 @@ public class PdIEntity {
         this.etiquetas = etiquetas != null ? etiquetas : new ArrayList<>();
     }
 
-    
     public void setImagenUrl(String imagenUrl) {
         this.imagenUrl = imagenUrl;
     }

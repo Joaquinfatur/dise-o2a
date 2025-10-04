@@ -120,18 +120,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             System.out.println("Creando nueva PdI con procesamiento avanzado...");
 
          
-            Integer hechoId = null;
-            if (dto.hechoId() != null && !dto.hechoId().trim().isEmpty()) {
-                try {
-                    hechoId = Integer.parseInt(dto.hechoId());
-                } catch (NumberFormatException e) {
-                    System.err.println("HechoId inválido: " + dto.hechoId());
-                    if (pdisRejectedCounter != null) {
-                        pdisRejectedCounter.increment();
-                    }
-                    return null;
-                }
-            }
+            String hechoId = dto.hechoId();
             
             
             PdI nuevaPdi = new PdI(Integer.parseInt(dto.id()), dto.contenido(), hechoId);
@@ -187,29 +176,22 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
     }
 
     @Override
-    public List<PdIDTO> buscarPorHecho(String hechoId) {
+        public List<PdIDTO> buscarPorHecho(String hechoId) {
         System.out.println("=== Buscando PdIs por hecho: " + hechoId + " ===");
-        
-        // CORREGIDO: Manejo de hechoId nullable
+    
         if (hechoId == null || hechoId.trim().isEmpty()) {
             System.err.println("HechoId vacío o null");
-            return new ArrayList<>();
+           return new ArrayList<>();
         }
-        
-        try {
-            Integer id = Integer.parseInt(hechoId);
-            List<PdIEntity> entities = repository.findByHechoId(id);
-            
-            System.out.println("Encontradas " + entities.size() + " PdIs para hecho " + hechoId);
-            
-            return entities.stream()
-                .map(this::convertirEntityADTO)
-                .collect(Collectors.toList());
-                
-        } catch (NumberFormatException e) {
-            System.err.println("HechoId inválido: " + hechoId);
-            return new ArrayList<>();
-        }
+    
+        // ELIMINAR el parseInt, usar directamente
+        List<PdIEntity> entities = repository.findByHechoId(hechoId);
+    
+        System.out.println("Encontradas " + entities.size() + " PdIs para hecho " + hechoId);
+    
+        return entities.stream()
+            .map(this::convertirEntityADTO)
+            .collect(Collectors.toList());
     }
 
     @Override

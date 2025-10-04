@@ -86,7 +86,7 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
         PdI nuevaPieza = new PdI(Integer.parseInt(piezaDTO.getId()), piezaDTO.getContenido());
         
         if (piezaDTO.getHechoId() != null) {
-            nuevaPieza.setHechoId(Integer.parseInt(piezaDTO.getHechoId()));
+            nuevaPieza.setHechoId(piezaDTO.getHechoId());
         }
         
         nuevaPieza.etiquetar(List.of("Importante", "Ubicación relevante"));
@@ -131,17 +131,16 @@ public class FachadaProcesador extends FachadaProcesadorPdI {
         return true;
     }
     
-    public List<PdI> obtenerPdIsPorHecho(int idHecho) {
+    public List<PdI> obtenerPdIsPorHecho(String idHecho) {
         List<PdI> piezasDelHecho = new ArrayList<>();
         for (PdI pieza : piezasProcesadas.values()) {
-            if (pieza.getHechoId() == idHecho) {
+            if (pieza.getHechoId() != null && pieza.getHechoId().equals(idHecho)) {
                 piezasDelHecho.add(pieza);
             }
         }
         System.out.println("Obteniendo PdIs para hecho " + idHecho + ": " + piezasDelHecho.size() + " encontradas");
-        return piezasDelHecho;
+        return piezasDelHecho; // ← FALTABA ESTO
     }
-
     public Map<String, Object> getEstadisticas() {
         Map<String, Object> stats = new HashMap<>();
         

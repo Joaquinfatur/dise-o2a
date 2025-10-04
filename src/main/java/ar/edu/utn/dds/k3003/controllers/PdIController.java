@@ -198,7 +198,7 @@ public class PdIController {
             // Actualizar hechoId si viene en el request
             if (updates.containsKey("hecho_id")) {
                 String nuevoHechoId = updates.get("hecho_id").toString();
-                entity.setHechoId(Integer.parseInt(nuevoHechoId));
+                entity.setHechoId(nuevoHechoId);
                 System.out.println("Actualizando hechoId a: " + nuevoHechoId);
             }
             

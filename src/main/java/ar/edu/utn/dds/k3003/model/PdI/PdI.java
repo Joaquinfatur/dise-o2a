@@ -16,12 +16,11 @@ public class PdI {
     private int id;
     private String contenido;
     private List<String> etiquetas; 
-    private Integer hechoId; 
+    private String hechoId; // ← CAMBIO: de Integer a String
     private boolean procesado;
     private String ubicacion;
     private LocalDateTime fecha;
     private String usuarioId;
-    
     
     private String imagenUrl;
     private String ocrResultado;
@@ -34,26 +33,25 @@ public class PdI {
         this.etiquetas = new ArrayList<>();
         this.etiquetasNuevas = new ArrayList<>();
         this.procesado = false;
-        this.hechoId = null; 
+        this.hechoId = null;
         this.imagenUrl = null;
         this.ocrResultado = null;
         this.etiquetadoResultado = null;
     }
 
-    public PdI(int id, String contenido, Integer hechoId) { 
+    public PdI(int id, String contenido, String hechoId) { // ← CAMBIO: parámetro String
         this.id = id;
         this.contenido = contenido;
         this.etiquetas = new ArrayList<>();
         this.etiquetasNuevas = new ArrayList<>();
         this.procesado = false;
-        this.hechoId = hechoId; 
+        this.hechoId = hechoId;
         this.imagenUrl = null;
         this.ocrResultado = null;
         this.etiquetadoResultado = null;
     }
 
-    
-    public PdI(int id, String contenido, Integer hechoId, String imagenUrl) {
+    public PdI(int id, String contenido, String hechoId, String imagenUrl) { // ← CAMBIO: parámetro String
         this.id = id;
         this.contenido = contenido;
         this.etiquetas = new ArrayList<>();
@@ -73,7 +71,6 @@ public class PdI {
         }
     }
 
-    
     public void etiquetarNuevo(List<String> nuevasEtiquetas) {
         if (nuevasEtiquetas != null) {
             if (this.etiquetasNuevas == null) {
@@ -84,7 +81,6 @@ public class PdI {
         }
     }
 
-    
     public void setOcrResultado(String ocrResultado) {
         this.ocrResultado = ocrResultado;
     }
@@ -102,12 +98,10 @@ public class PdI {
         }
     }
 
-    
     public void setProcesado(boolean procesado) {
         this.procesado = procesado;
     }
 
-    
     public Integer getId() { return id; }
     public String getContenido() { return contenido; }
     
@@ -117,12 +111,11 @@ public class PdI {
     }
     
     public boolean isProcesado() { return procesado; }
-    public Integer getHechoId() { return hechoId; } 
+    public String getHechoId() { return hechoId; } // ← CAMBIO: retorna String
     public String getUbicacion() { return this.ubicacion; }
     public LocalDateTime getFecha() { return this.fecha; }
     public String getUsuarioId() { return this.usuarioId; }
 
-    
     public String getImagenUrl() { return imagenUrl; }
     public String getOcrResultado() { return ocrResultado; }
     public String getEtiquetadoResultado() { return etiquetadoResultado; }
@@ -130,12 +123,10 @@ public class PdI {
         return etiquetasNuevas != null ? new ArrayList<>(etiquetasNuevas) : new ArrayList<>(); 
     }
 
-    
-    public void setHechoId(Integer hechoId) { this.hechoId = hechoId; } 
+    public void setHechoId(String hechoId) { this.hechoId = hechoId; } // ← CAMBIO: parámetro String
     public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }
     public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
     public void setUsuarioId(String usuarioId) { this.usuarioId = usuarioId; }
-    
     
     public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
     public void setEtiquetasNuevas(List<String> etiquetasNuevas) { this.etiquetasNuevas = etiquetasNuevas; }

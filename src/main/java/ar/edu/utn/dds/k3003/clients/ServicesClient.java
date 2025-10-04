@@ -158,7 +158,7 @@ public class ServicesClient {
 
             String response = webClient.get()
                     .uri("https://api.apilayer.com/image_labeling/url?url=" + imageUrl)
-                    .header("apikey", labelingApiKey)
+                    .header("apiKey", labelingApiKey)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(30))
