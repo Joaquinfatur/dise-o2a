@@ -135,7 +135,7 @@ public class StatsController {
         ));
     }
     }
-    
+    /*
     @Bean
     public Gauge databasePdisGauge(MeterRegistry meterRegistry) {
     return Gauge.builder("procesador.database.pdis.real", this, obj -> {
@@ -149,5 +149,5 @@ public class StatsController {
     .tag("service", "procesador-pdi")
     .tag("env", "prod")
     .register(meterRegistry);
-    }
+    }*/
 }
