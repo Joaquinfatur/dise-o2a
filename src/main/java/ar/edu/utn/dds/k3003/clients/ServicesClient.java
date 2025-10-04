@@ -17,7 +17,7 @@ public class ServicesClient {
     @Value("${services.fuentes.url:http://localhost:8081}")
     private String fuentesUrl;
 
-    @Value("${services.solicitudes.url:http://localhost:8082}")  // ← Cambiar esto a localhost
+    @Value("${services.solicitudes.url:http://localhost:8082}")  
     private String solicitudesUrl;
 
     @Value("${services.agregador.url:http://localhost:8083}")
@@ -68,7 +68,7 @@ public class ServicesClient {
     public boolean isSolicitudesServiceAvailable() {
         try {
             String response = webClient.get()
-                    .uri(solicitudesUrl + "/health")
+                    .uri(solicitudesUrl)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(15))
@@ -200,9 +200,9 @@ public class ServicesClient {
 
     public Map<String, String> checkServicesHealth() {
         return Map.of(
-            "fuentes", checkServiceHealth(fuentesUrl + "/health"),
-            "solicitudes", checkServiceHealth(solicitudesUrl + "/health"),
-            "agregador", checkServiceHealth(agregadorUrl + "/health"),
+            "fuentes", checkServiceHealth(fuentesUrl),
+            "solicitudes", checkServiceHealth(solicitudesUrl ),
+            "agregador", checkServiceHealth(agregadorUrl ),
             "ocr", ocrApiKey != null && !ocrApiKey.trim().isEmpty() ? "CONFIGURED" : "NOT_CONFIGURED",
             "labeling", labelingApiKey != null && !labelingApiKey.trim().isEmpty() ? "CONFIGURED" : "NOT_CONFIGURED"
         );
