@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -104,6 +104,36 @@ public class StatsController {
         "startTime", new java.util.Date(START_TIME).toString(),
         "currentTime", new java.util.Date().toString()
     ));
+    }
+    @Autowired
+    private javax.sql.DataSource dataSource;
+
+    @GetMapping("/force-create-tables")
+    public ResponseEntity<Map<String, Object>> forceCreateTables() {
+    try {
+        var conn = dataSource.getConnection();
+        var stmt = conn.createStatement();
+        
+        // Crear tabla principal
+        stmt.execute("CREATE TABLE IF NOT EXISTS pdis (id SERIAL PRIMARY KEY, hecho_id VARCHAR(255), contenido TEXT, ubicacion VARCHAR(255), fecha TIMESTAMP, usuario_id VARCHAR(255), imagen_url VARCHAR(500), ocr_resultado TEXT, etiquetado_resultado TEXT, procesado BOOLEAN DEFAULT false)");
+        
+        // Crear tablas de etiquetas
+        stmt.execute("CREATE TABLE IF NOT EXISTS pdi_etiquetas_deprecated (pdi_id INTEGER REFERENCES pdis(id) ON DELETE CASCADE, etiqueta VARCHAR(255))");
+        stmt.execute("CREATE TABLE IF NOT EXISTS pdi_etiquetas_nuevas (pdi_id INTEGER REFERENCES pdis(id) ON DELETE CASCADE, etiqueta VARCHAR(255))");
+        
+        conn.close();
+        
+        return ResponseEntity.ok(Map.of(
+            "status", "SUCCESS",
+            "message", "Tablas creadas correctamente",
+            "tables", List.of("pdis", "pdi_etiquetas_deprecated", "pdi_etiquetas_nuevas")
+        ));
+    } catch (Exception e) {
+        return ResponseEntity.ok(Map.of(
+            "status", "ERROR",
+            "error", e.getMessage()
+        ));
+    }
     }
     
     @Bean
