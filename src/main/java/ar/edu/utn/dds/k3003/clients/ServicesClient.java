@@ -94,7 +94,7 @@ public class ServicesClient {
     public Map<String, Object> getHecho(String hechoId) {
         try {
             return webClient.get()
-                    .uri(fuentesUrl + "/hecho/" + hechoId)
+                    .uri(fuentesUrl + "/hechos/" + hechoId)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .timeout(Duration.ofSeconds(15))
