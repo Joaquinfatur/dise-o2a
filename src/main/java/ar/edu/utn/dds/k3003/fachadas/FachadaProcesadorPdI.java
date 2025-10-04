@@ -89,17 +89,7 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             
             
             if (dto.hechoId() != null && !dto.hechoId().trim().isEmpty()) {
-                
-                
-                if (!servicesClient.isSolicitudesServiceAvailable()) {
-                    if (pdisRejectedCounter != null) {
-                        pdisRejectedCounter.increment();
-                    }
-                    System.err.println("Servicio de Solicitudes no disponible - rechazando PDI");
-                    return null;
-                }
-                
-                
+                             
                 if (!servicesClient.isHechoActivoYValido(dto.hechoId())) {
                     if (pdisRejectedCounter != null) {
                         pdisRejectedCounter.increment();
