@@ -17,7 +17,7 @@ public class ServicesClient {
     @Value("${services.fuentes.url:http://localhost:8081}")
     private String fuentesUrl;
 
-    @Value("${services.solicitudes.url:https://two025-tp-entrega-3-solicitudes.onrender.com}")
+    @Value("${services.solicitudes.url:http://localhost:8082}")  // ← Cambiar esto a localhost
     private String solicitudesUrl;
 
     @Value("${services.agregador.url:http://localhost:8083}")
@@ -29,6 +29,7 @@ public class ServicesClient {
     @Value("${external.labeling.apikey:}")
     private String labelingApiKey;
 
+    
     
     public record HechoResponse(String hechoId, boolean activo) {}
 
