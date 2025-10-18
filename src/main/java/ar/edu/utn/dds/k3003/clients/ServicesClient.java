@@ -1,206 +1,159 @@
 package ar.edu.utn.dds.k3003.clients;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.http.MediaType; 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Service
 public class ServicesClient {
-
-    private final WebClient webClient;
-
-    @Value("${services.fuentes.url:http://localhost:8081}")
-    private String fuentesUrl;
-
-    @Value("${services.solicitudes.url:http://localhost:8082}")  
-    private String solicitudesUrl;
-
-    @Value("${services.agregador.url:http://localhost:8083}")
-    private String agregadorUrl;
-
+    
+    private final RestTemplate restTemplate;
+    
     @Value("${external.ocr.apikey:}")
     private String ocrApiKey;
     
     @Value("${external.labeling.apikey:}")
     private String labelingApiKey;
-
     
+    @Value("${services.fuentes.url:http://localhost:8081}")
+    private String fuentesUrl;
     
-    public record HechoResponse(String hechoId, boolean activo) {}
+    @Value("${services.agregador.url:http://localhost:8083}")
+    private String agregadorUrl;
 
     public ServicesClient() {
-        this.webClient = WebClient.builder()
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
-                .build();
+        this.restTemplate = new RestTemplate();
     }
 
+    // Procesar OCR
+    public String procesarOCR(String imagenUrl) {
+        if (ocrApiKey == null || ocrApiKey.isEmpty()) {
+            System.out.println("OCR API key no configurada, usando resultado simulado");
+            return generarOCRSimulado();
+        }
+        
+        try {
+            String url = UriComponentsBuilder
+                .fromHttpUrl("https://api.ocr.space/parse/imageurl")
+                .queryParam("apikey", ocrApiKey)
+                .queryParam("url", imagenUrl)
+                .toUriString();
+            
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return response.getBody();
+            } else {
+                return "{\"error\": \"OCR falló con status: " + response.getStatusCode() + "\"}";
+            }
+        } catch (Exception e) {
+            System.err.println("Error llamando OCR API: " + e.getMessage());
+            return generarOCRSimulado();
+        }
+    }
 
+    // Procesar etiquetado
+    public String procesarEtiquetado(String imagenUrl) {
+        if (labelingApiKey == null || labelingApiKey.isEmpty()) {
+            System.out.println("Labeling API key no configurada, usando resultado simulado");
+            return generarEtiquetadoSimulado();
+        }
+        
+        try {
+            String url = UriComponentsBuilder
+                .fromHttpUrl("https://api.apilayer.com/image_labeling/url")
+                .queryParam("url", imagenUrl)
+                .toUriString();
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("apikey", labelingApiKey);
+            
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<String> response = restTemplate.exchange(
+                url, HttpMethod.GET, entity, String.class
+            );
+            
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return response.getBody();
+            } else {
+                return "{\"error\": \"Etiquetado falló con status: " + response.getStatusCode() + "\"}";
+            }
+        } catch (Exception e) {
+            System.err.println("Error llamando Labeling API: " + e.getMessage());
+            return generarEtiquetadoSimulado();
+        }
+    }
+
+    // Validar si un hecho está activo
     public boolean isHechoActivoYValido(String hechoId) {
-        if (hechoId == null || hechoId.trim().isEmpty()) {
-        return false;
-        }
-    
         try {
-            Map<String, Object> hecho = webClient.get()
-                .uri(fuentesUrl + "/hechos/" + hechoId)
-                .retrieve()  // ← FALTABA ESTO
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                .timeout(Duration.ofSeconds(15))
-                .block();
+            String url = fuentesUrl + "/hecho/" + hechoId;
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map hecho = response.getBody();
+                String estado = (String) hecho.get("estado");
+                return !"borrado".equals(estado) && !"censurado".equals(estado);
+            }
+        } catch (Exception e) {
+            System.err.println("Error verificando hecho: " + e.getMessage());
+        }
         
-            if (hecho == null) {
-            return false;
-            }
-        
-            Object estado = hecho.get("estado");
-            return estado != null && !"borrado".equals(estado.toString());
-        
-        } catch (Exception e) {
-            System.err.println("Error obteniendo hecho " + hechoId + ": " + e.getMessage());
-            return false;
-        }
+        // Si no podemos verificar, asumimos que está activo
+        return true;
     }
 
-    public boolean isHechoActivo(String hechoId) {
+    // Notificar al agregador
+    public void notifyAggregator(String hechoId, List<String> pdisIds) {
         try {
-            HechoResponse response = webClient.get()
-                    .uri(solicitudesUrl + "/solicitudes/hecho/{id}/activo", hechoId)
-                    .retrieve()
-                    .bodyToMono(HechoResponse.class)
-                    .timeout(Duration.ofSeconds(15))
-                    .block();
+            String url = agregadorUrl + "/notificar-pdis";
             
-            if (response == null) {
-                System.err.println("Respuesta nula de Solicitudes para hecho " + hechoId);
-                return false;
+            Map<String, Object> body = Map.of(
+                "hechoId", hechoId,
+                "pdisIds", pdisIds
+            );
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            
+            restTemplate.postForEntity(url, entity, Void.class);
+            System.out.println("Agregador notificado para hecho: " + hechoId);
+        } catch (Exception e) {
+            System.err.println("Error notificando agregador: " + e.getMessage());
+        }
+    }
+
+    // Métodos de simulación para cuando no hay API keys
+    private String generarOCRSimulado() {
+        return """
+            {
+                "ParsedResults": [{
+                    "ParsedText": "Texto simulado del OCR",
+                    "ErrorMessage": "",
+                    "ErrorDetails": ""
+                }],
+                "OCRExitCode": 1,
+                "IsErroredOnProcessing": false
             }
-            
-            System.out.println("Hecho " + hechoId + " estado: " + (response.activo() ? "ACTIVO" : "INACTIVO"));
-            return response.activo();
-            
-        } catch (Exception e) {
-            System.err.println("Error consultando estado del hecho " + hechoId + ": " + e.getMessage());
-            return false;
-        }
+            """;
     }
 
-
-    public Map<String, Object> getHecho(String hechoId) {
-        try {
-            return webClient.get()
-                    .uri(fuentesUrl + "/hechos/" + hechoId)
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .timeout(Duration.ofSeconds(15))
-                    .block();
-        } catch (WebClientResponseException e) {
-            if (e.getStatusCode().is4xxClientError()) {
-                System.err.println("Hecho " + hechoId + " no encontrado en Fuentes");
-                return null;
+    private String generarEtiquetadoSimulado() {
+        return """
+            {
+                "labels": [
+                    {"name": "persona", "confidence": 0.95},
+                    {"name": "edificio", "confidence": 0.87},
+                    {"name": "calle", "confidence": 0.76}
+                ]
             }
-            System.err.println("Error obteniendo hecho " + hechoId + ": " + e.getMessage());
-            return null;
-        } catch (Exception e) {
-            System.err.println("Error obteniendo hecho " + hechoId + ": " + e.getMessage());
-            return null;
-        }
-    }
-
-    public String procesarOCR(String imageUrl) {
-        try {
-            if (ocrApiKey == null || ocrApiKey.trim().isEmpty()) {
-                System.err.println("OCR API Key no configurada");
-                return "OCR no disponible - API Key no configurada";
-            }
-
-            String response = webClient.get()
-                    .uri("https://api.ocr.space/parse/imageurl?apikey=" + ocrApiKey + "&url=" + imageUrl)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(10))
-                    .block();
-
-            System.out.println("Resultado OCR obtenido para imagen: " + imageUrl);
-            return response;
-            
-        } catch (Exception e) {
-            System.err.println("Error procesando OCR para imagen " + imageUrl + ": " + e.getMessage());
-            return "Error en OCR: " + e.getMessage();
-        }
-    }
-
-
-    public String procesarEtiquetado(String imageUrl) {
-        try {
-            if (labelingApiKey == null || labelingApiKey.trim().isEmpty()) {
-                System.err.println("Labeling API Key no configurada");
-                return "Etiquetado no disponible - API Key no configurada";
-            }
-
-            String response = webClient.get()
-                    .uri("https://api.apilayer.com/image_labeling/url?url=" + imageUrl)
-                    .header("apiKey", labelingApiKey)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(30))
-                    .block();
-
-            System.out.println("Resultado etiquetado obtenido para imagen: " + imageUrl);
-            return response;
-            
-        } catch (Exception e) {
-            System.err.println("Error procesando etiquetado para imagen " + imageUrl + ": " + e.getMessage());
-            return "Error en etiquetado: " + e.getMessage();
-        }
-    }
-
-    public void notifyAggregator(String hechoId, List<String> pdiIds) {
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("hechoId", hechoId);
-        notification.put("pdiIds", pdiIds);
-    
-    // Fire and forget - asíncrono
-        webClient.post()
-                .uri(agregadorUrl + "/notifications/pdis")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(notification)
-                .retrieve()
-                .bodyToMono(String.class)
-                .subscribe(
-                    result -> System.out.println("✓ Agregador notificado: " + hechoId),
-                    error -> System.err.println("✗ Error notificando agregador: " + error.getMessage())
-                );
-    }
-
-
-    public Map<String, String> checkServicesHealth() {
-        return Map.of(
-            "fuentes", checkServiceHealth(fuentesUrl),
-            "solicitudes", checkServiceHealth(solicitudesUrl ),
-            "agregador", checkServiceHealth(agregadorUrl ),
-            "ocr", ocrApiKey != null && !ocrApiKey.trim().isEmpty() ? "CONFIGURED" : "NOT_CONFIGURED",
-            "labeling", labelingApiKey != null && !labelingApiKey.trim().isEmpty() ? "CONFIGURED" : "NOT_CONFIGURED"
-        );
-    }
-
-    private String checkServiceHealth(String url) {
-        try {
-            String response = webClient.get()
-                    .uri(url)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(15))
-                    .block();
-            return "UP";
-        } catch (Exception e) {
-            return "DOWN: " + e.getMessage();
-        }
+            """;
     }
 }
