@@ -34,7 +34,7 @@ public class StatsController {
     public ResponseEntity<Map<String, Object>> getStats() {
         try {
 
-            long totalEnBD = fachada.buscarTodas().size(); 
+            long totalEnBD = fachada.listar().size();
             
             Map<String, Object> stats = Map.of(
                 "totalProcesadas", pdisProcessedCounter != null ? pdisProcessedCounter.count() : 0.0,
