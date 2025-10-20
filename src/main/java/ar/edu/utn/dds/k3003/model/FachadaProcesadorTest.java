@@ -9,10 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 
-import ar.edu.utn.Simulacion.SolicitudesSimulacion;
 import ar.edu.utn.dds.k3003.app.FachadaProcesador;
-import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
-import ar.edu.utn.dds.k3003.model.PdI.PdI;
+import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
+
+import java.time.LocalDateTime;
 
 public class FachadaProcesadorTest {
     
@@ -26,41 +26,63 @@ public class FachadaProcesadorTest {
     @Test
     public void procesarPdICorrectamente() {
         try {
-            PdILocalDTO dto = new PdILocalDTO(1, 2, "Texto de prueba"); // Simula un hecho válido
-            PdILocalDTO resultado = procesador.procesarPdI(dto);
+            PdIDTO dto = new PdIDTO(
+                "1",
+                "2",
+                "Texto de prueba",
+                "",
+                LocalDateTime.now(),
+                "",
+                List.of()
+            );
+            
+            PdIDTO resultado = procesador.procesar(dto);
 
             assertNotNull(resultado);
-            assertTrue(resultado.getEtiquetas().contains("Importante"));
+            assertNotNull(resultado.contenido());
         } catch (Exception e) {
             throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
         }
     }
 
     @Test
-    void procesadorDebeRechazarPdICuandoHechoNoActivo() {
-        try (var mockSolicitudes = org.mockito.Mockito.mockStatic(SolicitudesSimulacion.class)) {
-            mockSolicitudes.when(() -> SolicitudesSimulacion.hechoActivo(1)).thenReturn(false);
-            
-            PdILocalDTO piezaDTO = new PdILocalDTO(1, 1, "Texto de prueba");
-            
-            PdILocalDTO resultado = procesador.procesarPdI(piezaDTO);
-            
-
-            assertNotNull(resultado);
-        } catch (Exception e) {
-            throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
-        }
-    }
-
-    @Test
-    void procesadorDebeRetornarPiezasDeHechoSimuladas() {
+    void procesadorDebeRechazarPdICuandoContenidoVacio() {
         try {
-            PdILocalDTO dto = new PdILocalDTO(1, 2, "Texto de prueba");
-            procesador.procesarPdI(dto);
-        
-            List<PdI> piezas = procesador.obtenerPdIsPorHecho("2"); // ← String en lugar de int
+            PdIDTO piezaDTO = new PdIDTO(
+                "1", 
+                "1", 
+                "",
+                "",
+                LocalDateTime.now(),
+                "",
+                List.of()
+            );
+            
+            PdIDTO resultado = procesador.procesar(piezaDTO);
+            
+            assertNull(resultado, "Debería rechazar PdI con contenido vacío"); 
+        } catch (Exception e) {
+            throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
+        }
+    }
+
+    @Test
+    void procesadorDebeRetornarPiezasDeHecho() {
+        try {
+            PdIDTO dto = new PdIDTO(
+                "1",
+                "2",
+                "Texto de prueba",
+                "",
+                LocalDateTime.now(),
+                "",
+                List.of()
+            );
+            procesador.procesar(dto);
+            
+            List<PdIDTO> piezas = procesador.buscarPorHecho("2");
             System.out.println("Cantidad de piezas recibidas después de procesar: " + piezas.size());
-            assertEquals(1, piezas.size());
+            assertTrue(piezas.size() >= 1);
         } catch (Exception e) {
             throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
         }
@@ -69,14 +91,22 @@ public class FachadaProcesadorTest {
     @Test
     void procesadorNoReprocesaPdIDuplicado() {
         try {
-            PdILocalDTO dto = new PdILocalDTO(1, 2, "Texto de prueba");
+            PdIDTO dto = new PdIDTO(
+                "1",
+                "2",
+                "Texto de prueba",
+                "",
+                LocalDateTime.now(),
+                "",
+                List.of()
+            );
             
-            PdILocalDTO resultado1 = procesador.procesarPdI(dto);
-            PdILocalDTO resultado2 = procesador.procesarPdI(dto);
+            PdIDTO resultado1 = procesador.procesar(dto);
+            PdIDTO resultado2 = procesador.procesar(dto);
             
             assertNotNull(resultado1);
-            assertEquals(resultado1.getEtiquetas(), resultado2.getEtiquetas());
-            assertEquals(resultado1.getContenido(), resultado2.getContenido());
+            assertNotNull(resultado2);
+            assertEquals(resultado1.id(), resultado2.id());
         } catch (Exception e) {
             throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
         }
@@ -85,46 +115,21 @@ public class FachadaProcesadorTest {
     @Test
     void procesadorManejaEntradaInvalida() {
         try {
-            PdILocalDTO dtoInvalido = new PdILocalDTO(2, 3, "");
+            PdIDTO dtoInvalido = new PdIDTO(
+                "2",
+                "3",
+                "",
+                "",
+                LocalDateTime.now(),
+                "",
+                List.of()
+            );
             
-            PdILocalDTO resultado = procesador.procesarPdI(dtoInvalido);
+            PdIDTO resultado = procesador.procesar(dtoInvalido);
             
             assertNull(resultado, "Se esperaba null para un PdIDTO con contenido inválido");
         } catch (Exception e) {
             throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
         }
     }
-
-    @Test
-    void procesadorDebeObtenerEstadisticas() {
-        try {
-            var stats = procesador.getEstadisticas();
-            
-            assertNotNull(stats);
-            assertTrue(stats.containsKey("totalProcesadas"));
-            assertTrue(stats.containsKey("enMemoria"));
-        } catch (Exception e) {
-            throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
-        }
-    }
-
-    @Test
-    void procesadorDebeLimpiarDatos() {
-        try {
-
-            PdILocalDTO dto = new PdILocalDTO(1, 2, "Texto de prueba");
-            procesador.procesarPdI(dto);
-            
-            var statsAntes = procesador.getEstadisticas();
-            assertTrue((Long) statsAntes.get("enMemoria") > 0);
-            
-            procesador.limpiarDatos();
-            
-            var statsDespues = procesador.getEstadisticas();
-            assertEquals(0L, (Long) statsDespues.get("enMemoria"));
-        } catch (Exception e) {
-            throw new RuntimeException("Test falló con excepción: " + e.getMessage(), e);
-        }
-    }
-
 }

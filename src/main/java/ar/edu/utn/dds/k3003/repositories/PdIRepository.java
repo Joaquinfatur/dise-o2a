@@ -10,4 +10,5 @@ import java.util.List;
 public interface PdIRepository extends JpaRepository<PdIEntity, Integer> {
     
     List<PdIEntity> findByHechoId(String hechoId);
+    List<PdIEntity> findByProcesado(Boolean procesado);
 }

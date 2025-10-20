@@ -68,14 +68,14 @@ public class StatsController {
             "status", "UP",
             "database", "PostgreSQL", 
             "datadog", "enabled",
-            "pdisEnBD", fachada.buscarTodas().size()
+            "pdisEnBD", fachada.listar().size()
         ));
     }
 
     @GetMapping("/debug-stats")
     public ResponseEntity<Map<String, Object>> debugStats() {
         try {
-            long pdisEnBD = fachada.buscarTodas().size();
+            long pdisEnBD = fachada.listar().size();
             
             return ResponseEntity.ok(Map.of(
                 "pdisEnBaseDatos", pdisEnBD,
