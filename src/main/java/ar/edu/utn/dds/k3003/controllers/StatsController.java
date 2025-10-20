@@ -1,6 +1,6 @@
 package ar.edu.utn.dds.k3003.controllers;
 
-import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI; // ← CAMBIO: Usar la fachada de BD
+import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI; 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;

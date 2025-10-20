@@ -1,5 +1,5 @@
 package ar.edu.utn.dds.k3003.persistence;
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;

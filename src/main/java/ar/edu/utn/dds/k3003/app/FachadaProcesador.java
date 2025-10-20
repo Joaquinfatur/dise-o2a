@@ -1,170 +1,365 @@
 package ar.edu.utn.dds.k3003.app;
 
-import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI;
-import ar.edu.utn.dds.k3003.clients.ServicesClient;
-import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
+import ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI;
+import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
 import ar.edu.utn.dds.k3003.model.PdI.PdI;
+import ar.edu.utn.dds.k3003.persistence.PdIEntity;
+import ar.edu.utn.dds.k3003.repositories.PdIRepository;
+import ar.edu.utn.dds.k3003.clients.ServicesClient;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
-@Primary  
-public class FachadaProcesador extends FachadaProcesadorPdI {
-    private final Map<Integer, PdI> piezasProcesadas = new HashMap<>();
-
-    @Autowired(required = false) 
+public class FachadaProcesador implements FachadaProcesadorPdI {
+    
+    // Repositorio JPA para persistencia
+    @Autowired(required = false)
+    private PdIRepository repository;
+    
+    // Cliente para servicios externos
+    @Autowired(required = false)
     private ServicesClient servicesClient;
-
-    @Autowired
+    
+    // Map en memoria como fallback
+    private Map<Integer, PdI> piezasProcesadas = new HashMap<>();
+    
+    // Métricas
     private Counter pdisProcessedCounter;
-    
-    @Autowired
     private Counter pdisRejectedCounter;
-    
-    @Autowired
     private Counter pdisErrorCounter;
     
-    @Autowired
-    private Timer processingTimer;
+    private static final Pattern IMAGE_URL_PATTERN = Pattern.compile(
+        "https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+\\.(jpg|jpeg|png|gif|bmp|webp)",
+        Pattern.CASE_INSENSITIVE
+    );
 
-    public PdILocalDTO procesarPdI(PdILocalDTO piezaDTO) {
-        Timer.Sample sample = Timer.start();
-
-         System.out.println("=== DEBUG ===");
-        System.out.println("hechoId recibido: " + piezaDTO.getHechoId());
-        System.out.println("contenido recibido: " + piezaDTO.getContenido());
-        try {
-        if (piezaDTO.getContenido() == null || piezaDTO.getContenido().trim().isEmpty()) {
-            pdisRejectedCounter.increment();
-            System.out.println("PdI rechazada: contenido vacío");
-            return null;
-        }
-        
-        if (piezaDTO.getHechoId() != null && servicesClient != null) {
-            String hechoId = piezaDTO.getHechoId();
-            
-            if (!servicesClient.isHechoActivo(hechoId)) {
-                System.out.println("Hecho " + hechoId + " no está activo, rechazando PdI");
-                pdisRejectedCounter.increment();
-                return null;
-            }
-            Map<String, Object> hechoInfo = servicesClient.getHecho(hechoId);
-            if (hechoInfo == null) {
-                System.out.println("No se pudo obtener información del hecho " + hechoId);
-            }
-        } else if (piezaDTO.getHechoId() != null) {
-            System.out.println("ServicesClient no disponible, usando lógica de simulación");
-            int hechoId = Integer.parseInt(piezaDTO.getHechoId());
-            if (!hechoActivoFallback(hechoId)) {
-                pdisRejectedCounter.increment();
-                return null;
-            }
-        }
-        
-        if (piezasProcesadas.containsKey(Integer.parseInt(piezaDTO.getId()))) {
-            PdI piezaExistente = piezasProcesadas.get(Integer.parseInt(piezaDTO.getId()));
-            System.out.println("PdI ya existe, devolviendo existente: " + piezaExistente.getId());
-            return new PdILocalDTO(
-                String.valueOf(piezaExistente.getId()),
-                String.valueOf(piezaExistente.getHechoId()),
-                piezaExistente.getContenido(),
-                piezaExistente.getUbicacion(),
-                piezaExistente.getFecha(),
-                piezaExistente.getUsuarioId(),
-                piezaExistente.getEtiquetas()
-            );
-        }
-         
-        PdI nuevaPieza = new PdI(Integer.parseInt(piezaDTO.getId()), piezaDTO.getContenido());
-        
-        if (piezaDTO.getHechoId() != null) {
-            nuevaPieza.setHechoId(piezaDTO.getHechoId());
-        }
-        
-        nuevaPieza.etiquetar(List.of("Importante", "Ubicación relevante"));
-        
-        piezasProcesadas.put(nuevaPieza.getId(), nuevaPieza);
-        
-        if (piezaDTO.getHechoId() != null && servicesClient != null) {
-            try {
-                servicesClient.notifyAggregator(
-                    piezaDTO.getHechoId(), 
-                    List.of(String.valueOf(nuevaPieza.getId()))
-                );
-            } catch (Exception e) {
-                System.err.println("Error notificando agregador: " + e.getMessage());
-            }
-        }
-        
-        pdisProcessedCounter.increment();
-        System.out.println("PdI procesada exitosamente: " + nuevaPieza.getId());
-        
-        return new PdILocalDTO(
-            String.valueOf(nuevaPieza.getId()),
-            piezaDTO.getHechoId(),
-            nuevaPieza.getContenido(),
-            null,
-            null,
-            null,
-            nuevaPieza.getEtiquetas()
-        );
-        
-        } catch (Exception e) {
-        pdisErrorCounter.increment();
-        System.err.println("Error procesando PdI: " + e.getMessage());
-        e.printStackTrace();
-        return null; 
-     } finally {
-        sample.stop(processingTimer);
-        }
-    }
-
-    private boolean hechoActivoFallback(int idHecho) {
-        return true;
+    // Constructor sin parámetros para compatibilidad
+    public FachadaProcesador() {
+        // Inicialización básica
     }
     
-    public List<PdI> obtenerPdIsPorHecho(String idHecho) {
-        List<PdI> piezasDelHecho = new ArrayList<>();
-        for (PdI pieza : piezasProcesadas.values()) {
-            if (pieza.getHechoId() != null && pieza.getHechoId().equals(idHecho)) {
-                piezasDelHecho.add(pieza);
+    // Constructor con MeterRegistry opcional
+    @Autowired(required = false)
+    public void setMeterRegistry(MeterRegistry meterRegistry) {
+        if (meterRegistry != null) {
+            this.pdisProcessedCounter = Counter.builder("pdis.processed")
+                .description("PDIs procesadas exitosamente")
+                .register(meterRegistry);
+            
+            this.pdisRejectedCounter = Counter.builder("pdis.rejected")
+                .description("PDIs rechazadas")
+                .register(meterRegistry);
+            
+            this.pdisErrorCounter = Counter.builder("pdis.error")
+                .description("Errores procesando PDIs")
+                .register(meterRegistry);
+        }
+    }
+
+    @Override
+    @Transactional
+    public PdIDTO procesar(PdIDTO dto) {
+        try {
+            System.out.println("=== PROCESAR PDI ===");
+            System.out.println("ID: " + dto.id());
+            System.out.println("HechoId: " + dto.hechoId());
+            System.out.println("Contenido: " + dto.contenido());
+            
+            // Validar contenido
+            if (dto.contenido() == null || dto.contenido().trim().isEmpty()) {
+                incrementarContador(pdisRejectedCounter);
+                System.out.println("PDI rechazada: contenido vacío");
+                return null;
+            }
+            
+            // Si tenemos repository, intentar usar persistencia
+            if (repository != null) {
+                return procesarConPersistencia(dto);
+            } else {
+                // Fallback a memoria
+                return procesarEnMemoria(dto);
+            }
+            
+        } catch (Exception e) {
+            incrementarContador(pdisErrorCounter);
+            System.err.println("Error procesando PDI: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    private PdIDTO procesarConPersistencia(PdIDTO dto) {
+        // Verificar si ya existe
+        if (dto.id() != null) {
+            try {
+                Optional<PdIEntity> existente = repository.findById(Integer.parseInt(dto.id()));
+                if (existente.isPresent()) {
+                    System.out.println("PDI ya existe en BD");
+                    return convertirEntityADTO(existente.get());
+                }
+            } catch (Exception e) {
+                System.err.println("Error buscando PDI existente: " + e.getMessage());
             }
         }
-        System.out.println("Obteniendo PdIs para hecho " + idHecho + ": " + piezasDelHecho.size() + " encontradas");
-        return piezasDelHecho; // ← FALTABA ESTO
+        
+        // Crear nueva entidad
+        PdIEntity entity = new PdIEntity(dto.hechoId(), dto.contenido());
+        
+        // Procesar imagen si existe
+        String imagenUrl = extraerImagenUrl(dto.contenido());
+        
+        if (imagenUrl != null) {
+            System.out.println("URL de imagen encontrada: " + imagenUrl);
+            entity.setImagenUrl(imagenUrl);
+            
+            // Procesar OCR si el servicio está disponible
+            if (servicesClient != null) {
+                try {
+                    String ocrResultado = servicesClient.procesarOCR(imagenUrl);
+                    entity.setOcrResultado(ocrResultado);
+                    System.out.println("OCR completado y guardado");
+                } catch (Exception e) {
+                    System.err.println("Error en OCR: " + e.getMessage());
+                    entity.setOcrResultado("{\"error\": \"" + e.getMessage() + "\"}");
+                }
+                
+                try {
+                    String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
+                    entity.setEtiquetadoResultado(etiquetadoResultado);
+                    System.out.println("Etiquetado completado y guardado");
+                } catch (Exception e) {
+                    System.err.println("Error en etiquetado: " + e.getMessage());
+                    entity.setEtiquetadoResultado("{\"error\": \"" + e.getMessage() + "\"}");
+                }
+            }
+            
+            generarEtiquetas(entity);
+        } else {
+            agregarEtiquetasPorTexto(entity);
+        }
+        
+        entity.setProcesado(true);
+        
+        // Persistir
+        entity = repository.save(entity);
+        System.out.println("PDI guardada en BD con ID: " + entity.getId());
+        
+        incrementarContador(pdisProcessedCounter);
+        
+        return convertirEntityADTO(entity);
     }
+    
+    private PdIDTO procesarEnMemoria(PdIDTO dto) {
+        // Verificar si ya existe en memoria
+        int id = dto.id() != null ? Integer.parseInt(dto.id()) : piezasProcesadas.size() + 1;
+        
+        if (piezasProcesadas.containsKey(id)) {
+            PdI existente = piezasProcesadas.get(id);
+            System.out.println("PDI ya existe en memoria");
+            return convertirPdIADTO(existente);
+        }
+        
+        // Crear nuevo PdI
+        PdI pdi = new PdI(id, dto.contenido());
+        if (dto.hechoId() != null) {
+            pdi.setHechoId(dto.hechoId());
+        }
+        
+        // Procesar imagen si existe
+        String imagenUrl = extraerImagenUrl(dto.contenido());
+        
+        if (imagenUrl != null) {
+            System.out.println("URL de imagen encontrada: " + imagenUrl);
+            pdi.setImagenUrl(imagenUrl);
+            
+            if (servicesClient != null) {
+                try {
+                    String ocrResultado = servicesClient.procesarOCR(imagenUrl);
+                    pdi.setOcrResultado(ocrResultado);
+                    System.out.println("OCR completado (memoria)");
+                } catch (Exception e) {
+                    System.err.println("Error en OCR: " + e.getMessage());
+                }
+                
+                try {
+                    String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
+                    pdi.setEtiquetadoResultado(etiquetadoResultado);
+                    System.out.println("Etiquetado completado (memoria)");
+                } catch (Exception e) {
+                    System.err.println("Error en etiquetado: " + e.getMessage());
+                }
+            }
+            
+            pdi.etiquetarNuevo(List.of("ConImagen", "Procesado"));
+        } else {
+            pdi.etiquetarNuevo(List.of("SoloTexto", "Procesado"));
+        }
+        
+        pdi.setProcesado(true);
+        
+        // Guardar en memoria
+        piezasProcesadas.put(id, pdi);
+        System.out.println("PDI guardada en memoria con ID: " + id);
+        
+        incrementarContador(pdisProcessedCounter);
+        
+        return convertirPdIADTO(pdi);
+    }
+    
+    private String extraerImagenUrl(String contenido) {
+        if (contenido == null) return null;
+        
+        Matcher matcher = IMAGE_URL_PATTERN.matcher(contenido);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+        return null;
+    }
+    
+    private void generarEtiquetas(PdIEntity entity) {
+        List<String> etiquetas = new ArrayList<>();
+        
+        if (entity.getOcrResultado() != null && !entity.getOcrResultado().contains("error")) {
+            etiquetas.add("ConTextoOCR");
+        }
+        
+        if (entity.getEtiquetadoResultado() != null && !entity.getEtiquetadoResultado().contains("error")) {
+            etiquetas.add("ConEtiquetasIA");
+        }
+        
+        etiquetas.add("ConImagen");
+        etiquetas.add("ProcesadoCompleto");
+        
+        entity.setEtiquetasNuevas(etiquetas);
+    }
+    
+    private void agregarEtiquetasPorTexto(PdIEntity entity) {
+        List<String> etiquetas = new ArrayList<>();
+        
+        String contenido = entity.getContenido().toLowerCase();
+        
+        if (contenido.length() > 100) {
+            etiquetas.add("TextoLargo");
+        } else {
+            etiquetas.add("TextoCorto");
+        }
+        
+        if (contenido.contains("urgente") || contenido.contains("importante")) {
+            etiquetas.add("Prioritario");
+        }
+        
+        etiquetas.add("SoloTexto");
+        
+        entity.setEtiquetasNuevas(etiquetas);
+    }
+    
+    private PdIDTO convertirEntityADTO(PdIEntity entity) {
+        // Usar el constructor correcto de PdIDTO con todos los parámetros
+        return new PdIDTO(
+            String.valueOf(entity.getId()),
+            entity.getHechoId(),
+            entity.getContenido(),
+            entity.getUbicacion() != null ? entity.getUbicacion() : "",
+            entity.getFecha(),
+            entity.getUsuarioId() != null ? entity.getUsuarioId() : "",
+            entity.getEtiquetasNuevas()
+        );
+    }
+    
+    private PdIDTO convertirPdIADTO(PdI pdi) {
+        // Usar el constructor correcto de PdIDTO con todos los parámetros
+        return new PdIDTO(
+            String.valueOf(pdi.getId()),
+            pdi.getHechoId(),
+            pdi.getContenido(),
+            pdi.getUbicacion() != null ? pdi.getUbicacion() : "",
+            pdi.getFecha(),
+            pdi.getUsuarioId() != null ? pdi.getUsuarioId() : "",
+            pdi.getEtiquetasNuevas()
+        );
+    }
+    
+    private void incrementarContador(Counter counter) {
+        if (counter != null) {
+            counter.increment();
+        }
+    }
+    
+    // Métodos adicionales para obtener PDIs
+    public List<PdIDTO> listarTodos() {
+        if (repository != null) {
+            return repository.findAll().stream()
+                .map(this::convertirEntityADTO)
+                .collect(Collectors.toList());
+        } else {
+            return piezasProcesadas.values().stream()
+                .map(this::convertirPdIADTO)
+                .collect(Collectors.toList());
+        }
+    }
+    
+    public PdIDTO obtenerPorId(String id) {
+        if (repository != null) {
+            Optional<PdIEntity> entity = repository.findById(Integer.parseInt(id));
+            return entity.map(this::convertirEntityADTO).orElse(null);
+        } else {
+            PdI pdi = piezasProcesadas.get(Integer.parseInt(id));
+            return pdi != null ? convertirPdIADTO(pdi) : null;
+        }
+    }
+    
+    public List<PdIDTO> listarPorHecho(String hechoId) {
+        if (repository != null) {
+            return repository.findByHechoId(hechoId).stream()
+                .map(this::convertirEntityADTO)
+                .collect(Collectors.toList());
+        } else {
+            return piezasProcesadas.values().stream()
+                .filter(pdi -> hechoId.equals(pdi.getHechoId()))
+                .map(this::convertirPdIADTO)
+                .collect(Collectors.toList());
+        }
+    }
+    
+    // Método para limpiar datos
+    @Transactional
+    public void limpiarDatos() {
+        if (repository != null) {
+            repository.deleteAll();
+        }
+        piezasProcesadas.clear();
+        System.out.println("Datos limpiados");
+    }
+    
+    // Método para estadísticas
     public Map<String, Object> getEstadisticas() {
         Map<String, Object> stats = new HashMap<>();
         
-        stats.put("totalProcesadas", pdisProcessedCounter.count());
-        stats.put("totalRechazadas", pdisRejectedCounter.count());
-        stats.put("totalErrores", pdisErrorCounter.count());
-        stats.put("enMemoria", piezasProcesadas.size());
-        
-        if (servicesClient != null) {
-            try {
-                stats.put("serviciosExternos", servicesClient.checkServicesHealth());
-            } catch (Exception e) {
-                stats.put("serviciosExternos", "Error: " + e.getMessage());
-            }
+        if (repository != null) {
+            stats.put("totalEnBD", repository.count());
+            stats.put("modo", "persistencia");
         } else {
-            stats.put("serviciosExternos", "ServicesClient no disponible");
+            stats.put("totalEnMemoria", piezasProcesadas.size());
+            stats.put("modo", "memoria");
+        }
+        
+        if (pdisProcessedCounter != null) {
+            stats.put("procesadas", pdisProcessedCounter.count());
+        }
+        
+        if (pdisRejectedCounter != null) {
+            stats.put("rechazadas", pdisRejectedCounter.count());
         }
         
         return stats;
-    }
-
-    public void limpiarDatos() {
-        piezasProcesadas.clear();
-
-        System.out.println("Datos limpiados del procesador");
     }
 }

@@ -1,10 +1,10 @@
 package ar.edu.utn.dds.k3003.fachadas;
 
-import ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI;
+//import ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI;
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
 import ar.edu.utn.dds.k3003.persistence.PdIEntity;
 import ar.edu.utn.dds.k3003.repositories.PdIRepository;
-import ar.edu.utn.dds.k3003.services.ServicesClient;
+import ar.edu.utn.dds.k3003.clients.ServicesClient;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
