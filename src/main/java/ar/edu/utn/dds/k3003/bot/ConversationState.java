@@ -1,5 +1,4 @@
-// ========== ConversationState.java ==========
-package ar.edu.utn.dds.k3003.commands;
+package ar.edu.utn.dds.k3003.bot;
 
 public abstract class ConversationState {
     private boolean waitingForInput = false;
@@ -12,5 +11,6 @@ public abstract class ConversationState {
         this.waitingForInput = waiting;
     }
     
-    public abstract void handleInput(String input, TelegramBot bot, long chatId);
+    // Ahora usa la interfaz en lugar de la clase concreta
+    public abstract void handleInput(String input, BotMessenger bot, long chatId);
 }
