@@ -1,8 +1,8 @@
 package ar.edu.utn.dds.k3003.commands;
 
 import ar.edu.utn.dds.k3003.bot.BotMessenger;
-import ar.edu.utn.dds.k3003.bot.ConversationState;
 import ar.edu.utn.dds.k3003.bot.TelegramBot;
+import ar.edu.utn.dds.k3003.bot.ConversationState;
 import ar.edu.utn.dds.k3003.clients.ServicesClient;
 import java.util.Map;
 
@@ -23,10 +23,10 @@ public class ListarHechosCommand implements Command {
             @Override
             public void handleInput(String input, BotMessenger bot, long chatId) {
                 try {
+                    String coleccion = input.trim();  // ← AHORA la variable existe aquí
+                    
                     // Aquí llamarías a tu API del agregador
                     // Por ahora, simulamos la respuesta
-                    String coleccion = input.trim();
-                    
                     bot.sendMessage(chatId, 
                         "Hechos de la colección: *" + coleccion + "*\n\n" +
                         "Consultando al agregador...\n\n" +

@@ -91,7 +91,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleConversationInput(long chatId, String input, ConversationState state) {
         try {
-            state.handleInput(input, this, chatId);
+            state.handleInput(input, (BotMessenger) this, chatId);
         } catch (Exception e) {
             sendMessage(chatId, "Error procesando tu respuesta: " + e.getMessage());
             conversationStates.remove(chatId);
