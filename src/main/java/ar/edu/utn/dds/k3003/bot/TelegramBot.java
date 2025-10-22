@@ -2,7 +2,8 @@ package ar.edu.utn.dds.k3003.bot;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.bots.TelegramWebhookBot;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -21,13 +22,16 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class TelegramBot extends TelegramLongPollingBot {
+public class TelegramBot extends TelegramWebhookBot implements BotMessenger {
 
     @Value("${telegram.bot.token}")
     private String botToken;
 
     @Value("${telegram.bot.username}")
     private String botUsername;
+    
+    @Value("${telegram.webhook.url:https://dise-o2a.onrender.com}")
+    private String webhookUrl;
 
     private final Map<String, Command> commands = new HashMap<>();
     private final Map<Long, ConversationState> conversationStates = new HashMap<>();
@@ -61,47 +65,53 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     @Override
-    public void onUpdateReceived(Update update) {
+    public String getBotPath() {
+        return "/telegram/webhook";
+    }
+
+    @Override
+    public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
-            // Verificar si el usuario está en medio de una conversación
             ConversationState state = conversationStates.get(chatId);
             
             if (state != null && state.isWaitingForInput()) {
-                // Procesar la respuesta del usuario
                 handleConversationInput(chatId, messageText, state);
             } else {
-                // Es un comando nuevo
                 String command = messageText.split(" ")[0].toLowerCase();
                 
                 if (commands.containsKey(command)) {
                     try {
                         commands.get(command).execute(this, chatId, messageText, conversationStates);
                     } catch (Exception e) {
-                        sendMessage(chatId, " Error: " + e.getMessage());
+                        sendMessage(chatId, "❌ Error: " + e.getMessage());
                     }
                 } else {
-                    sendMessage(chatId, " Comando no reconocido. Usa /help para ver los comandos disponibles.");
+                    sendMessage(chatId, "❓ Comando no reconocido. Usa /help para ver los comandos disponibles.");
                 }
             }
         }
+        return null;
     }
 
     private void handleConversationInput(long chatId, String input, ConversationState state) {
         try {
-            state.handleInput(input, (BotMessenger) this, chatId);
+            state.handleInput(input, this, chatId);
         } catch (Exception e) {
-            sendMessage(chatId, "Error procesando tu respuesta: " + e.getMessage());
+            sendMessage(chatId, "❌ Error procesando tu respuesta: " + e.getMessage());
             conversationStates.remove(chatId);
         }
     }
 
+    // Implementación de BotMessenger
+    @Override
     public void sendMessage(long chatId, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText(text);
+        message.enableMarkdown(true);
         
         try {
             execute(message);
@@ -110,6 +120,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    @Override
     public void sendMessageWithKeyboard(long chatId, String text, List<List<String>> keyboard) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -137,6 +148,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    @Override
     public void sendPhoto(long chatId, String photoUrl, String caption) {
         SendPhoto photo = new SendPhoto();
         photo.setChatId(String.valueOf(chatId));
@@ -148,7 +160,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(photo);
         } catch (TelegramApiException e) {
-            sendMessage(chatId, "No se pudo cargar la imagen: " + photoUrl);
+            sendMessage(chatId, "❌ No se pudo cargar la imagen: " + photoUrl);
         }
     }
 
