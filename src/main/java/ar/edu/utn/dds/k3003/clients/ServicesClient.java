@@ -83,12 +83,17 @@ public class ServicesClient {
         if (ocrApiKey == null || ocrApiKey.isEmpty()) {
             return "OCR API Key no configurada";
         }
-        
+    
         try {
+            // Agregar más parámetros para mejor detección
             String url = "https://api.ocr.space/parse/imageurl" +
-                         "?apikey=" + ocrApiKey +
-                         "&url=" + imageUrl;
-            
+                     "?apikey=" + ocrApiKey +
+                     "&url=" + imageUrl +
+                     "&language=spa" +           // ← Español
+                     "&isOverlayRequired=false" + // ← Sin overlay
+                     "&detectOrientation=true" +  // ← Detectar orientación
+                     "&scale=true";               // ← Escalar imagen
+        
             String response = WebClient.create()
                 .get()
                 .uri(url)
@@ -96,9 +101,15 @@ public class ServicesClient {
                 .bodyToMono(String.class)
                 .timeout(Duration.ofSeconds(30))
                 .block();
-            
+        
+            // Verificar si hubo error
+            if (response != null && response.contains("\"IsErroredOnProcessing\":true")) {
+                System.err.println("OCR Error Response: " + response);
+                return "Error OCR: Imagen no válida o formato no soportado";
+            }
+        
             return response != null ? response : "Sin resultado OCR";
-            
+        
         } catch (Exception e) {
             System.err.println("Error en OCR: " + e.getMessage());
             return "Error OCR: " + e.getMessage();

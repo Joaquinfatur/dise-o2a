@@ -10,8 +10,10 @@ import io.micrometer.core.instrument.Timer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -244,13 +246,33 @@ public class FachadaProcesadorPdI {
     private String procesarOCR(String imageUrl) {
         if (servicesClient != null) {
             try {
-                return servicesClient.procesarOCR(imageUrl);
-            } catch (Exception e) {
-                System.err.println("Error llamando OCR API: " + e.getMessage());
-                return "Error en OCR: " + e.getMessage();
+                // Validar que la URL sea accesible
+             if (!esUrlAccesible(imageUrl)) {
+                return "Error: URL de imagen no accesible";
+            }
+            
+            return servicesClient.procesarOCR(imageUrl);
+        } catch (Exception e) {
+            System.err.println("Error llamando OCR API: " + e.getMessage());
+             return "Error en OCR: " + e.getMessage();
             }
         }
         return "OCR no disponible";
+    }
+    private boolean esUrlAccesible(String url) {
+        try {
+            WebClient.create()
+                .head()
+                .uri(url)
+                .retrieve()
+                .toBodilessEntity()
+                .timeout(Duration.ofSeconds(5))
+                .block();
+            return true;
+        } catch (Exception e) {
+            System.err.println("URL no accesible: " + url);
+            return false;
+        }
     }
 
     private String procesarLabeling(String imageUrl) {
