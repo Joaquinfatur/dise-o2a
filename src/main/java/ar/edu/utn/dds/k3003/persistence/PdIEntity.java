@@ -36,7 +36,7 @@ public class PdIEntity {
     
     private Boolean procesado = false;
     
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER) 
     @CollectionTable(
         name = "pdi_etiquetas_nuevas",
         joinColumns = @JoinColumn(name = "pdi_id")

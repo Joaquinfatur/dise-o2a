@@ -1,6 +1,6 @@
 package ar.edu.utn.dds.k3003.controllers;
 
-import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
+import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
 import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,29 +13,29 @@ import java.util.Map;
 @RestController
 @RequestMapping("/pdis")
 public class PdIController {
-    
+   
     @Autowired
     private FachadaProcesadorPdI fachadaProcesador;
 
-    // GET /pdis - Listar todos los PDIs
+    // GET /pdis - Listar todos los PDIs o filtrar por hecho
     @GetMapping
-    public ResponseEntity<List<PdIDTO>> listarPdis(
+    public ResponseEntity<List<PdILocalDTO>> listarPdis(
             @RequestParam(value = "hecho", required = false) String hechoId) {
-        
+       
         if (hechoId != null) {
-            List<PdIDTO> pdis = fachadaProcesador.listarPorHecho(hechoId);
+            List<PdILocalDTO> pdis = fachadaProcesador.listarPorHecho(hechoId);
             return ResponseEntity.ok(pdis);
         } else {
-            List<PdIDTO> pdis = fachadaProcesador.listar();
+            List<PdILocalDTO> pdis = fachadaProcesador.listar();
             return ResponseEntity.ok(pdis);
         }
     }
 
     // GET /pdis/{id} - Obtener un PDI específico
     @GetMapping("/{id}")
-    public ResponseEntity<PdIDTO> obtenerPdi(@PathVariable String id) {
-        PdIDTO pdi = fachadaProcesador.obtener(id);
-        
+    public ResponseEntity<PdILocalDTO> obtenerPdi(@PathVariable String id) {
+        PdILocalDTO pdi = fachadaProcesador.obtener(id);
+       
         if (pdi != null) {
             return ResponseEntity.ok(pdi);
         } else {
@@ -45,18 +45,19 @@ public class PdIController {
 
     // POST /pdis - Procesar un nuevo PDI
     @PostMapping
-    public ResponseEntity<PdIDTO> procesarPdi(@RequestBody PdIDTO pdiDTO) {
+    public ResponseEntity<PdILocalDTO> procesarPdi(@RequestBody PdILocalDTO pdiDTO) {
         try {
-            PdIDTO resultado = fachadaProcesador.procesar(pdiDTO);
-            
+            PdILocalDTO resultado = fachadaProcesador.procesar(pdiDTO);
+           
             if (resultado != null) {
                 return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
             } else {
                 return ResponseEntity.badRequest().build();
             }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(null);
+            System.err.println("Error en POST /pdis: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -72,14 +73,5 @@ public class PdIController {
     public ResponseEntity<Map<String, Object>> obtenerEstadisticas() {
         Map<String, Object> stats = fachadaProcesador.getEstadisticas();
         return ResponseEntity.ok(stats);
-    }
-
-    // GET /health - Verificar que el servicio está funcionando
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        return ResponseEntity.ok(Map.of(
-            "status", "UP",
-            "service", "procesador-pdi"
-        ));
     }
 }

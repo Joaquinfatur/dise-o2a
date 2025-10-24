@@ -1,7 +1,6 @@
 package ar.edu.utn.dds.k3003.fachadas;
 
-import ar.edu.utn.dds.k3003.facades.FachadaSolicitudes;
-import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
+import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
 import ar.edu.utn.dds.k3003.persistence.PdIEntity;
 import ar.edu.utn.dds.k3003.repositories.PdIRepository;
 import ar.edu.utn.dds.k3003.clients.ServicesClient;
@@ -14,27 +13,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
-public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI {
-    
-    private FachadaSolicitudes fachadaSolicitudes;
-    
+public class FachadaProcesadorPdI {
+
     @Autowired
     private PdIRepository repository;
-    
-    @Autowired
+
+    @Autowired(required = false)
     private ServicesClient servicesClient;
-    
+
     private Counter pdisProcessedCounter;
     private Counter pdisRejectedCounter;
     private Timer processingTimer;
-    
-    private static final Pattern IMAGE_URL_PATTERN = Pattern.compile(
-        "https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+\\.(jpg|jpeg|png|gif|bmp|webp)",
+
+    private static final Pattern URL_PATTERN = Pattern.compile(
+        "^https?://.*\\.(jpg|jpeg|png|gif|bmp|webp)",
         Pattern.CASE_INSENSITIVE
     );
 
@@ -53,231 +49,245 @@ public class FachadaProcesadorPdI implements ar.edu.utn.dds.k3003.facades.Fachad
             .register(meterRegistry);
     }
 
-    // ============ MÉTODOS DE LA INTERFAZ ============
+    // ============ MÉTODOS PÚBLICOS ============
     
-    public List<PdIDTO> listar() {
+    @Transactional(readOnly = true)
+    public List<PdILocalDTO> listar() {
         List<PdIEntity> entities = repository.findAll();
         return entities.stream()
             .map(this::convertirEntityADTO)
             .collect(Collectors.toList());
     }
 
-    @Override
-    public PdIDTO buscarPdIPorId(String id) {
-        Optional<PdIEntity> entity = repository.findById(Integer.parseInt(id));
-        return entity.map(this::convertirEntityADTO).orElse(null);
+    @Transactional(readOnly = true)
+    public PdILocalDTO obtener(String id) {
+        try {
+            Optional<PdIEntity> entity = repository.findById(Integer.parseInt(id));
+            return entity.map(this::convertirEntityADTO).orElse(null);
+        } catch (NumberFormatException e) {
+            System.err.println("ID inválido: " + id);
+            return null;
+        }
     }
 
-    @Override
-    public List<PdIDTO> buscarPorHecho(String hechoId) {
+    @Transactional(readOnly = true)
+    public List<PdILocalDTO> listarPorHecho(String hechoId) {
         List<PdIEntity> entities = repository.findByHechoId(hechoId);
         return entities.stream()
             .map(this::convertirEntityADTO)
             .collect(Collectors.toList());
     }
 
-    @Override
-    public void setFachadaSolicitudes(FachadaSolicitudes fachadaSolicitudes) {
-        this.fachadaSolicitudes = fachadaSolicitudes;
-    }
-
-    @Override
     @Transactional
-    public PdIDTO procesar(PdIDTO dto) {
+    public PdILocalDTO procesar(PdILocalDTO dto) {
         Timer.Sample sample = Timer.start();
         
         try {
             System.out.println("=== PROCESAR PDI ===");
-            System.out.println("ID: " + dto.id());
-            System.out.println("HechoId: " + dto.hechoId());
-            System.out.println("Contenido: " + dto.contenido());
+            System.out.println("ID: " + dto.getId());
+            System.out.println("HechoId: " + dto.getHechoId());
+            System.out.println("Contenido: " + dto.getContenido());
             
             // Validar contenido
-            if (dto.contenido() == null || dto.contenido().trim().isEmpty()) {
-                pdisRejectedCounter.increment();
+            if (dto.getContenido() == null || dto.getContenido().trim().isEmpty()) {
+                incrementarContador(pdisRejectedCounter);
                 System.out.println("PDI rechazada: contenido vacío");
                 return null;
             }
             
             // Validar hecho si está configurado
-            if (dto.hechoId() != null && !dto.hechoId().trim().isEmpty()) {
-                if (!servicesClient.isHechoActivoYValido(dto.hechoId())) {
-                    pdisRejectedCounter.increment();
-                    System.err.println("Hecho " + dto.hechoId() + " no válido - rechazando PDI");
-                    return null;
+            if (dto.getHechoId() != null && !dto.getHechoId().trim().isEmpty()) {
+                if (servicesClient != null) {
+                    try {
+                        if (!servicesClient.isHechoActivoYValido(dto.getHechoId())) {
+                            incrementarContador(pdisRejectedCounter);
+                            System.err.println("Hecho " + dto.getHechoId() + " no válido - rechazando PDI");
+                            return null;
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error verificando hecho: " + e.getMessage());
+                        // Continuar de todas formas
+                    }
                 }
             }
             
-            // Verificar si ya existe
-            if (dto.id() != null) {
-                Optional<PdIEntity> existente = repository.findById(Integer.parseInt(dto.id()));
-                if (existente.isPresent()) {
-                    System.out.println("PDI ya existe, devolviendo existente");
-                    return convertirEntityADTO(existente.get());
-                }
-            }
+            // Crear entidad
+            PdIEntity entity = new PdIEntity();
+            entity.setHechoId(dto.getHechoId());
+            entity.setContenido(dto.getContenido());
+            entity.setUbicacion(dto.getUbicacion());
+            entity.setFecha(LocalDateTime.now());
+            entity.setUsuarioId(dto.getUsuarioId());
+            entity.setProcesado(false);
             
-            // Crear nueva entidad
-            PdIEntity entity = new PdIEntity(dto.hechoId(), dto.contenido());
-            
-            // Buscar URL de imagen
-            String imagenUrl = extraerImagenUrl(dto.contenido());
-            
-            if (imagenUrl != null) {
-                System.out.println("URL de imagen encontrada: " + imagenUrl);
-                entity.setImagenUrl(imagenUrl);
+            // Procesar imagen si es URL
+            if (esUrlImagen(dto.getContenido())) {
+                System.out.println("URL de imagen encontrada: " + dto.getContenido());
+                entity.setImagenUrl(dto.getContenido());
                 
-                // Procesar OCR
                 try {
-                    String ocrResultado = servicesClient.procesarOCR(imagenUrl);
-                    entity.setOcrResultado(ocrResultado);
+                    String ocr = procesarOCR(dto.getContenido());
+                    entity.setOcrResultado(ocr);
                     System.out.println("OCR completado");
                 } catch (Exception e) {
                     System.err.println("Error en OCR: " + e.getMessage());
-                    entity.setOcrResultado("{\"error\": \"" + e.getMessage() + "\"}");
                 }
                 
-                // Procesar etiquetado
                 try {
-                    String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
-                    entity.setEtiquetadoResultado(etiquetadoResultado);
+                    String labeling = procesarLabeling(dto.getContenido());
+                    entity.setEtiquetadoResultado(labeling);
                     System.out.println("Etiquetado completado");
+                    
+                    // Extraer etiquetas del resultado
+                    List<String> etiquetas = extraerEtiquetas(labeling);
+                    entity.setEtiquetasNuevas(etiquetas);
                 } catch (Exception e) {
-                    System.err.println("Error en etiquetado: " + e.getMessage());
-                    entity.setEtiquetadoResultado("{\"error\": \"" + e.getMessage() + "\"}");
+                    System.err.println("Error en Labeling: " + e.getMessage());
                 }
-                
-                // Generar etiquetas basadas en los resultados
-                generarEtiquetas(entity);
             } else {
-                System.out.println("No hay imagen, procesando solo texto");
-                agregarEtiquetasPorTexto(entity);
+                // Procesar contenido de texto
+                List<String> etiquetas = procesarContenido(dto.getContenido());
+                entity.setEtiquetasNuevas(etiquetas);
             }
             
             entity.setProcesado(true);
             
-            // Persistir en base de datos
-            entity = repository.save(entity);
-            System.out.println("PDI guardada con ID: " + entity.getId());
+            // Guardar en BD
+            PdIEntity guardada = repository.save(entity);
+            System.out.println("PDI guardada con ID: " + guardada.getId());
             
-            pdisProcessedCounter.increment();
-            
-            // Notificar al agregador si corresponde
-            if (dto.hechoId() != null && servicesClient != null) {
+            // Notificar agregador (opcional)
+            if (servicesClient != null) {
                 try {
-                    servicesClient.notifyAggregator(
-                        dto.hechoId(),
-                        List.of(String.valueOf(entity.getId()))
-                    );
+                    servicesClient.notificarNuevoPDI(guardada.getId().toString());
                 } catch (Exception e) {
                     System.err.println("Error notificando agregador: " + e.getMessage());
                 }
             }
             
-            return convertirEntityADTO(entity);
+            incrementarContador(pdisProcessedCounter);
+            sample.stop(processingTimer);
             
-        } finally {
-            if (sample != null && processingTimer != null) {
-                sample.stop(processingTimer);
-            }
+            return convertirEntityADTO(guardada);
+            
+        } catch (Exception e) {
+            incrementarContador(pdisRejectedCounter);
+            System.err.println("Error procesando PDI: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
     }
 
-    // ============ MÉTODOS AUXILIARES ============
-    
-    public PdIDTO obtener(String id) {
-        Optional<PdIEntity> entity = repository.findById(Integer.parseInt(id));
-        return entity.map(this::convertirEntityADTO).orElse(null);
-    }
-
-    public List<PdIDTO> listarPorHecho(String hechoId) {
-        List<PdIEntity> entities = repository.findByHechoId(hechoId);
-        return entities.stream()
-            .map(this::convertirEntityADTO)
-            .collect(Collectors.toList());
-    }
-
-    private String extraerImagenUrl(String contenido) {
-        if (contenido == null) return null;
-        
-        Matcher matcher = IMAGE_URL_PATTERN.matcher(contenido);
-        if (matcher.find()) {
-            return matcher.group();
-        }
-        return null;
-    }
-
-    private void generarEtiquetas(PdIEntity entity) {
-        List<String> etiquetas = new ArrayList<>();
-        
-        // Procesar resultado OCR
-        if (entity.getOcrResultado() != null && !entity.getOcrResultado().contains("error")) {
-            if (entity.getOcrResultado().contains("ParsedText")) {
-                etiquetas.add("ConTextoOCR");
-            }
-        }
-        
-        // Procesar resultado etiquetado
-        if (entity.getEtiquetadoResultado() != null && !entity.getEtiquetadoResultado().contains("error")) {
-            if (entity.getEtiquetadoResultado().contains("labels")) {
-                etiquetas.add("ConEtiquetasIA");
-            }
-        }
-        
-        // Etiquetas generales
-        etiquetas.add("ConImagen");
-        etiquetas.add("ProcesadoCompleto");
-        
-        entity.setEtiquetasNuevas(etiquetas);
-    }
-
-    private void agregarEtiquetasPorTexto(PdIEntity entity) {
-        List<String> etiquetas = new ArrayList<>();
-        
-        String contenido = entity.getContenido().toLowerCase();
-        
-        if (contenido.length() > 100) {
-            etiquetas.add("TextoLargo");
-        } else {
-            etiquetas.add("TextoCorto");
-        }
-        
-        if (contenido.contains("urgente") || contenido.contains("importante")) {
-            etiquetas.add("Prioritario");
-        }
-        
-        etiquetas.add("SoloTexto");
-        
-        entity.setEtiquetasNuevas(etiquetas);
-    }
-
-    // ============ CONVERSIÓN DE ENTITIES A DTO ============
-    
-    private PdIDTO convertirEntityADTO(PdIEntity entity) {
-        return new PdIDTO(
-            String.valueOf(entity.getId()),
-            entity.getHechoId(),
-            entity.getContenido(),
-            entity.getUbicacion() != null ? entity.getUbicacion() : "",
-            entity.getFecha() != null ? entity.getFecha() : LocalDateTime.now(),
-            entity.getUsuarioId() != null ? entity.getUsuarioId() : "",
-            entity.getEtiquetasNuevas() != null ? entity.getEtiquetasNuevas() : new ArrayList<>()
-        );
-    }
-
-    // ============ MÉTODOS UTILITARIOS ============
-    
     @Transactional
     public void limpiarDatos() {
         repository.deleteAll();
-        System.out.println("Todos los PDIs han sido eliminados");
+        System.out.println("Todos los PDIs eliminados");
     }
 
     public Map<String, Object> getEstadisticas() {
+        long total = repository.count();
+        long procesados = repository.countByProcesado(true);
+        
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalEnBD", repository.count());
-        stats.put("procesados", repository.findByProcesado(true).size());
-        stats.put("sinProcesar", repository.findByProcesado(false).size());
+        stats.put("total_pdis", total);
+        stats.put("pdis_procesadas", procesados);
+        stats.put("pdis_pendientes", total - procesados);
+        
         return stats;
+    }
+
+    // ============ MÉTODOS PRIVADOS ============
+    
+    private PdILocalDTO convertirEntityADTO(PdIEntity entity) {
+        PdILocalDTO dto = new PdILocalDTO();
+        
+        dto.setId(entity.getId() != null ? entity.getId().toString() : null);
+        dto.setHechoId(entity.getHechoId());
+        dto.setContenido(entity.getContenido());
+        dto.setUbicacion(entity.getUbicacion());
+        dto.setFecha(entity.getFecha());
+        dto.setUsuarioId(entity.getUsuarioId());
+        dto.setEtiquetas(entity.getEtiquetasNuevas());
+        dto.setImagenUrl(entity.getImagenUrl());
+        dto.setOcrResultado(entity.getOcrResultado());
+        dto.setEtiquetadoResultado(entity.getEtiquetadoResultado());
+        dto.setProcesado(entity.getProcesado() != null ? entity.getProcesado() : false);
+        
+        return dto;
+    }
+
+    private boolean esUrlImagen(String contenido) {
+        if (contenido == null) return false;
+        return URL_PATTERN.matcher(contenido.toLowerCase()).find();
+    }
+
+    private List<String> procesarContenido(String contenido) {
+        List<String> etiquetas = new ArrayList<>();
+        
+        if (contenido == null || contenido.trim().isEmpty()) {
+            return etiquetas;
+        }
+        
+        String[] palabras = contenido.toLowerCase()
+            .replaceAll("[^a-záéíóúñ\\s]", "")
+            .split("\\s+");
+        
+        for (String palabra : palabras) {
+            if (palabra.length() > 3) {
+                etiquetas.add(palabra);
+            }
+        }
+        
+        return etiquetas.stream().distinct().limit(10).collect(Collectors.toList());
+    }
+
+    private String procesarOCR(String imageUrl) {
+        if (servicesClient != null) {
+            try {
+                return servicesClient.procesarOCR(imageUrl);
+            } catch (Exception e) {
+                System.err.println("Error llamando OCR API: " + e.getMessage());
+                return "Error en OCR: " + e.getMessage();
+            }
+        }
+        return "OCR no disponible";
+    }
+
+    private String procesarLabeling(String imageUrl) {
+        if (servicesClient != null) {
+            try {
+                return servicesClient.procesarLabeling(imageUrl);
+            } catch (Exception e) {
+                System.err.println("Error llamando Labeling API: " + e.getMessage());
+                return "Error en Labeling: " + e.getMessage();
+            }
+        }
+        return "Labeling no disponible";
+    }
+
+    private List<String> extraerEtiquetas(String resultadoLabeling) {
+        List<String> etiquetas = new ArrayList<>();
+        
+        if (resultadoLabeling == null || resultadoLabeling.contains("Error")) {
+            return etiquetas;
+        }
+        
+        // Parsear JSON simple (buscar palabras entre comillas)
+        String[] partes = resultadoLabeling.split("\"");
+        for (int i = 0; i < partes.length; i++) {
+            String parte = partes[i].trim();
+            if (parte.length() > 2 && !parte.contains("{") && !parte.contains("}") 
+                && !parte.contains(":") && !parte.matches(".*\\d+.*")) {
+                etiquetas.add(parte);
+            }
+        }
+        
+        return etiquetas.stream().distinct().limit(10).collect(Collectors.toList());
+    }
+
+    private void incrementarContador(Counter counter) {
+        if (counter != null) {
+            counter.increment();
+        }
     }
 }
