@@ -96,6 +96,18 @@ public class FachadaProcesadorPdI {
                 System.out.println("PDI rechazada: contenido vacío");
                 return null;
             }
+            if (esUrlImagen(dto.getContenido())) {
+            Optional<PdIEntity> existente = repository.findByImagenUrl(dto.getContenido());
+            
+            if (existente.isPresent()) {
+                incrementarContador(pdisRejectedCounter);
+                System.err.println("PDI rechazada: imagen duplicada - " + dto.getContenido());
+                System.err.println("Ya existe PDI con ID: " + existente.get().getId());
+                return null;  // ← Rechazar
+                
+                
+            }
+            }
             
             // Validar hecho si está configurado
             if (dto.getHechoId() != null && !dto.getHechoId().trim().isEmpty()) {
@@ -159,13 +171,13 @@ public class FachadaProcesadorPdI {
             System.out.println("PDI guardada con ID: " + guardada.getId());
             
             // Notificar agregador (opcional)
-            if (servicesClient != null) {
-                try {
-                    servicesClient.notificarNuevoPDI(guardada.getId().toString());
-                } catch (Exception e) {
-                    System.err.println("Error notificando agregador: " + e.getMessage());
-                }
-            }
+            //if (servicesClient != null) {
+             //   try {
+               //     servicesClient.notificarNuevoPDI(guardada.getId().toString());
+                //} catch (Exception e) {
+                 //   System.err.println("Error notificando agregador: " + e.getMessage());
+                //}
+            //}
             
             incrementarContador(pdisProcessedCounter);
             sample.stop(processingTimer);
@@ -312,4 +324,5 @@ public class FachadaProcesadorPdI {
             counter.increment();
         }
     }
+
 }
