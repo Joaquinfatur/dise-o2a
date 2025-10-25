@@ -10,5 +10,5 @@ import java.util.Optional;
 public interface PdIRepository extends JpaRepository<PdIEntity, Integer> {
     List<PdIEntity> findByHechoId(String hechoId);
     long countByProcesado(boolean procesado);
-    Optional<PdIEntity> findByImagenUrl(String imagenUrl); 
+    Optional<PdIEntity> findFirstByImagenUrl(String imagenUrl); 
 }
