@@ -97,10 +97,9 @@ public class FachadaProcesadorPdI {
                 return null;
             }
             if (esUrlImagen(dto.getContenido())) {
-            Optional<PdIEntity> existente = repository.findByImagenUrl(dto.getContenido());
+            Optional<PdIEntity> existente = repository.findFirstByImagenUrl(dto.getContenido());
             
             if (existente.isPresent()) {
-                
                 System.out.println("Imagen ya procesada, retornando existente ID: " 
                     + existente.get().getId());
                 return convertirEntityADTO(existente.get());
