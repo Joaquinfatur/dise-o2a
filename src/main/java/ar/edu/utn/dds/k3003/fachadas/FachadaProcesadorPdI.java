@@ -287,7 +287,7 @@ public class FachadaProcesadorPdI {
     private String procesarLabeling(String imageUrl) {
         if (servicesClient != null) {
             try {
-                return servicesClient.procesarLabeling(imageUrl);
+                return servicesClient.procesarEtiquetado(imageUrl);
             } catch (Exception e) {
                 System.err.println("Error llamando Labeling API: " + e.getMessage());
                 return "Error en Labeling: " + e.getMessage();

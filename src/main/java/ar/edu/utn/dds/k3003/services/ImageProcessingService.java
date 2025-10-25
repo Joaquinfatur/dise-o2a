@@ -209,7 +209,7 @@ public class ImageProcessingService {
         pdi.setOcrResultado(ocrResultado);
         
         // Etiquetado
-        String etiquetadoResultado = servicesClient.procesarLabeling(imagenUrl);
+        String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
         System.out.println("Etiquetado completado para PDI " + pdi.getId());
         pdi.setEtiquetadoResultado(etiquetadoResultado);
         
