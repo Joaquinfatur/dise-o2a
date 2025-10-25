@@ -91,7 +91,7 @@ public class ImageProcessingService {
         
         try {
             JsonNode root = objectMapper.readTree(ocrJson);
-            
+            boolean textoEncontrado = false;
             
             if (root.has("ParsedResults") && root.get("ParsedResults").isArray()) {
                 for (JsonNode result : root.get("ParsedResults")) {
@@ -100,7 +100,8 @@ public class ImageProcessingService {
                         
                         if (texto != null && !texto.trim().isEmpty()) {
                             etiquetas.add("ConTexto");
-                            
+
+                            textoEncontrado = true;
                             // Análisis básico del texto
                             String textoLower = texto.toLowerCase();
                             if (textoLower.contains("fecha") || textoLower.matches(".*\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}.*")) {
@@ -116,6 +117,11 @@ public class ImageProcessingService {
                     }
                 }
             }
+            //Fallback
+            if (!textoEncontrado) {
+                etiquetas.add("SinTexto");
+                etiquetas.add("ImagenSinOCR");
+            }
             
         } catch (Exception e) {
             System.err.println("Error procesando resultado OCR: " + e.getMessage());
@@ -123,7 +129,7 @@ public class ImageProcessingService {
         }
         
         return etiquetas;
-    }
+}
 
     private List<String> procesarResultadoEtiquetado(String etiquetadoJson) {
         List<String> etiquetas = new ArrayList<>();
