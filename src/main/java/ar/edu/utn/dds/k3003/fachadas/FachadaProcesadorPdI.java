@@ -100,14 +100,12 @@ public class FachadaProcesadorPdI {
             Optional<PdIEntity> existente = repository.findByImagenUrl(dto.getContenido());
             
             if (existente.isPresent()) {
-                incrementarContador(pdisRejectedCounter);
-                System.err.println("PDI rechazada: imagen duplicada - " + dto.getContenido());
-                System.err.println("Ya existe PDI con ID: " + existente.get().getId());
-                return null;  // ← Rechazar
                 
-                
+                System.out.println("Imagen ya procesada, retornando existente ID: " 
+                    + existente.get().getId());
+                return convertirEntityADTO(existente.get());
             }
-            }
+        }
             
             // Validar hecho si está configurado
             if (dto.getHechoId() != null && !dto.getHechoId().trim().isEmpty()) {
