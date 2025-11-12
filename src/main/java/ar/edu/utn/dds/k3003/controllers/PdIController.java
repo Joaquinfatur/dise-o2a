@@ -1,14 +1,23 @@
 package ar.edu.utn.dds.k3003.controllers;
 
-import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
-import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
+import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
+import ar.edu.utn.dds.k3003.fachadas.FachadaProcesadorPdI;
+import ar.edu.utn.dds.k3003.services.PdiQueueProducer;
 
 @RestController
 @RequestMapping("/pdis")
@@ -16,6 +25,9 @@ public class PdIController {
    
     @Autowired
     private FachadaProcesadorPdI fachadaProcesador;
+    
+    @Autowired
+    private PdiQueueProducer queueProducer;
 
     // GET /pdis - Listar todos los PDIs o filtrar por hecho
     @GetMapping
@@ -43,14 +55,19 @@ public class PdIController {
         }
     }
 
-    // POST /pdis - Procesar un nuevo PDI
+    // POST /pdis - Procesar un nuevo PDI (ASINCRÓNICO)
     @PostMapping
     public ResponseEntity<PdILocalDTO> procesarPdi(@RequestBody PdILocalDTO pdiDTO) {
         try {
-            PdILocalDTO resultado = fachadaProcesador.procesar(pdiDTO);
+           
+            PdILocalDTO resultado = fachadaProcesador.guardarSinProcesar(pdiDTO);
            
             if (resultado != null) {
-                return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
+                
+                queueProducer.enviarPdiParaProcesar(resultado.getId());
+                
+                
+                return ResponseEntity.status(HttpStatus.ACCEPTED).body(resultado);
             } else {
                 return ResponseEntity.badRequest().build();
             }
