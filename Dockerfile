@@ -17,7 +17,7 @@ COPY src ./src
 RUN mvn clean package -Dmaven.test.skip=true
 
 # Production stage
-FROM openjdk:17-jdk-alpine
+FROM eclipse-temurin:17-jre-alpine
 
 # Install curl for health checks
 RUN apk add --no-cache curl
