@@ -43,6 +43,7 @@ public class PdIController {
         }
     }
 
+
     // GET /pdis/{id} - Obtener un PDI específico
     @GetMapping("/{id}")
     public ResponseEntity<PdILocalDTO> obtenerPdi(@PathVariable String id) {
