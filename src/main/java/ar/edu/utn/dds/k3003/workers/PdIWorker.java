@@ -91,7 +91,7 @@ public class PdIWorker {
         System.out.println("📤 Enviando PDI al Search Service: " + searchUrl);
         
         org.springframework.web.reactive.function.client.WebClient.create()
-            .patch()  // ← CAMBIADO A PATCH
+            .patch()
             .uri(searchUrl)
             .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
             .bodyValue(payload)
