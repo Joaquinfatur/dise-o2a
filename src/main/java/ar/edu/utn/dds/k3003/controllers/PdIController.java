@@ -23,7 +23,7 @@ public class PdIController {
     private FachadaProcesadorPdI fachadaProcesador;
     
     @Autowired
-    private PdIMessageProducer messageProducer;  // ← CAMBIAR DE PdiQueueProducer a PdIMessageProducer
+    private PdIMessageProducer messageProducer;  
 
     // GET /pdis - Listar todos los PDIs o filtrar por hecho
     @GetMapping
