@@ -88,14 +88,13 @@ public class ServicesClient {
         }
         
         try {
-            // ✅ Construir URI con encoding automático
             URI uri = UriComponentsBuilder
-                .fromHttpUrl("https://api.ocr.space/parse/imageurl")
-                .queryParam("apikey", ocrApiKey)
-                .queryParam("url", imagenUrl)
-                .build(true)  // ← Encodea automáticamente los parámetros
-                .toUri();
-            
+            .fromHttpUrl("https://api.ocr.space/parse/imageurl")
+            .queryParam("apikey", ocrApiKey)
+            .queryParam("url", imagenUrl)
+            .encode()  
+            .build()
+            .toUri();   
             String response = WebClient.create()
                 .get()
                 .uri(uri)
