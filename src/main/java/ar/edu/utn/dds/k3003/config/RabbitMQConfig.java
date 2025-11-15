@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import jakarta.annotation.PostConstruct;
 
 @Configuration
 @ConditionalOnProperty(name = "rabbitmq.enabled", havingValue = "true", matchIfMissing = false)
@@ -22,27 +23,39 @@ public class RabbitMQConfig {
 
     @Value("${rabbitmq.routing.key:pdis.process}")
     private String routingKey;
+    
+    @Value("${spring.rabbitmq.uri:NOT_SET}")
+    private String rabbitmqUri;
 
-    /**
-     * Declarar la cola (queue) donde se publicarán los PDIs a procesar
-     */
-    @Bean
-    public Queue pdisQueue() {
-        return QueueBuilder.durable(queueName)
-                .build();
+    @PostConstruct
+    public void debugRabbitMQConfig() {
+        System.out.println("=================================================");
+        System.out.println("🐰 RABBITMQ CONFIG DEBUG");
+        System.out.println("=================================================");
+        System.out.println("Queue Name: " + queueName);
+        System.out.println("Exchange Name: " + exchangeName);
+        System.out.println("Routing Key: " + routingKey);
+        System.out.println("RabbitMQ URI: " + (rabbitmqUri != null && rabbitmqUri.length() > 30 
+            ? rabbitmqUri.substring(0, 30) + "..." 
+            : rabbitmqUri));
+        System.out.println("RABBITMQ_ENABLED (env): " + System.getenv("RABBITMQ_ENABLED"));
+        System.out.println("RABBITMQ_URL (env): " + 
+            (System.getenv("RABBITMQ_URL") != null 
+                ? System.getenv("RABBITMQ_URL").substring(0, Math.min(30, System.getenv("RABBITMQ_URL").length())) + "..." 
+                : "NULL"));
+        System.out.println("=================================================");
     }
 
-    /**
-     * Declarar el exchange de tipo topic
-     */
+    @Bean
+    public Queue pdisQueue() {
+        return QueueBuilder.durable(queueName).build();
+    }
+
     @Bean
     public TopicExchange pdisExchange() {
         return new TopicExchange(exchangeName);
     }
 
-    /**
-     * Binding: conectar la cola con el exchange usando la routing key
-     */
     @Bean
     public Binding binding(Queue pdisQueue, TopicExchange pdisExchange) {
         return BindingBuilder
@@ -51,17 +64,11 @@ public class RabbitMQConfig {
                 .with(routingKey);
     }
 
-    /**
-     * Message converter para serializar/deserializar JSON
-     */
     @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
-    /**
-     * RabbitTemplate para enviar mensajes (útil para testing)
-     */
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
