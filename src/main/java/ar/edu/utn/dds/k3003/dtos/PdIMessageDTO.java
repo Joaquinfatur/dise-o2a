@@ -1,13 +1,15 @@
 package ar.edu.utn.dds.k3003.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.time.LocalDateTime;
 
 /**
  * DTO para mensajes de RabbitMQ que solicitan procesamiento de un PDI
  */
 public class PdIMessageDTO {
+    
+    @JsonProperty("id")
+    private String id;  // ← AGREGAR ESTE CAMPO
     
     @JsonProperty("hecho_id")
     private String hechoId;
@@ -28,8 +30,9 @@ public class PdIMessageDTO {
     public PdIMessageDTO() {
     }
     
-    // Constructor completo
-    public PdIMessageDTO(String hechoId, String contenido, String ubicacion, String usuarioId) {
+    // Constructor completo - MODIFICAR
+    public PdIMessageDTO(String id, String hechoId, String contenido, String ubicacion, String usuarioId) {
+        this.id = id;  // ← AGREGAR
         this.hechoId = hechoId;
         this.contenido = contenido;
         this.ubicacion = ubicacion;
@@ -37,7 +40,16 @@ public class PdIMessageDTO {
         this.fecha = LocalDateTime.now();
     }
     
-    // Getters y Setters
+    // ← AGREGAR GETTER Y SETTER PARA ID
+    public String getId() {
+        return id;
+    }
+    
+    public void setId(String id) {
+        this.id = id;
+    }
+    
+    // Getters y Setters existentes...
     public String getHechoId() {
         return hechoId;
     }
@@ -81,7 +93,8 @@ public class PdIMessageDTO {
     @Override
     public String toString() {
         return "PdIMessageDTO{" +
-                "hechoId='" + hechoId + '\'' +
+                "id='" + id + '\'' +  // ← AGREGAR
+                ", hechoId='" + hechoId + '\'' +
                 ", contenido='" + contenido + '\'' +
                 ", ubicacion='" + ubicacion + '\'' +
                 ", usuarioId='" + usuarioId + '\'' +

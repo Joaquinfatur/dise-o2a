@@ -66,7 +66,7 @@ public class ImageProcessingService {
         return null;
     }
 
-    private List<String> generarEtiquetasAutomaticas(String ocrResultado, String etiquetadoResultado) {
+    public List<String> generarEtiquetasAutomaticas(String ocrResultado, String etiquetadoResultado) {
         List<String> etiquetas = new ArrayList<>();
         
         

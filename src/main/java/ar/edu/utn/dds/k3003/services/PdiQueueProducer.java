@@ -29,7 +29,7 @@ public class PdiQueueProducer {
         try {
             PdiQueueMessage mensaje = new PdiQueueMessage(pdiId);
             
-            rabbitTemplate.convertAndSend(RabbitMQConfig.PDI_QUEUE_NAME, mensaje);
+            rabbitTemplate.convertAndSend("pdis_queue", mensaje);
             
             System.out.println("✅ PDI encolado: " + pdiId);
             pdisEncoladosCounter.increment();

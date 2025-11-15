@@ -140,7 +140,17 @@
           <mainClass>ar.edu.utn.dds.k3003.Application</mainClass>
         </configuration>
       </plugin>
-      
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.11.0</version>
+            <configuration>
+                <source>17</source>
+                <target>17</target>
+                <proc>none</proc>  
+            </configuration>
+        </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

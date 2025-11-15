@@ -4,7 +4,11 @@ import ar.edu.utn.dds.k3003.clients.ServicesClient;
 import ar.edu.utn.dds.k3003.dtos.PdILocalDTO;
 import ar.edu.utn.dds.k3003.persistence.PdIEntity;
 import ar.edu.utn.dds.k3003.repositories.PdIRepository;
+import ar.edu.utn.dds.k3003.services.ImageProcessingService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -57,6 +61,58 @@ public class FachadaProcesadorPdI {
             return null;
         }
     }
+    @Autowired
+private ImageProcessingService imageProcessingService;
+
+/**
+ * Procesamiento COMPLETO: OCR + Etiquetado + Guardar
+ */
+    @Transactional
+public PdILocalDTO procesarCompleto(PdILocalDTO pdiDTO) {
+    try {
+        System.out.println("=== PROCESAMIENTO COMPLETO PDI ===");
+        System.out.println("ID: " + pdiDTO.getId());
+        
+        // 1. Buscar el PDI en la BD
+        Optional<PdIEntity> entityOpt = pdiRepository.findById(Integer.parseInt(pdiDTO.getId()));
+        if (entityOpt.isEmpty()) {
+            System.err.println("PDI no encontrado: " + pdiDTO.getId());
+            return null;
+        }
+        
+        PdIEntity entity = entityOpt.get();
+        
+        // 2. Ejecutar procesamiento de imagen (OCR + Etiquetado)
+        String imagenUrl = entity.getContenido();
+        if (imagenUrl != null && imagenUrl.startsWith("http")) {
+            String ocrResultado = servicesClient.procesarOCR(imagenUrl);
+            String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
+            
+            // 3. Guardar resultados
+            entity.setOcrResultado(ocrResultado);
+            entity.setEtiquetadoResultado(etiquetadoResultado);
+            entity.setImagenUrl(imagenUrl);
+
+            // 4. Generar etiquetas automáticas
+            List<String> etiquetas = imageProcessingService.generarEtiquetasAutomaticas(ocrResultado, etiquetadoResultado);  // ← CAMBIAR AQUÍ
+            entity.setEtiquetasNuevas(etiquetas);
+        } else {
+            entity.setEtiquetasNuevas(List.of("SinImagen"));
+        }
+        
+        // 5. Marcar como procesado y guardar
+        entity.setProcesado(true);
+        entity = pdiRepository.save(entity);
+        
+        System.out.println("✅ PDI procesado completamente: " + entity.getId());
+        return entityToDTO(entity);
+        
+    } catch (Exception e) {
+        System.err.println("Error procesando PDI: " + e.getMessage());
+        e.printStackTrace();
+        return null;
+    }
+}
 
     /**
      * Método original (mantener por compatibilidad)
