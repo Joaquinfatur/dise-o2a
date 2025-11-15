@@ -43,24 +43,35 @@ public class RabbitMQConfig {
 
     @Bean
     @Primary
-    public org.springframework.amqp.rabbit.connection.ConnectionFactory connectionFactory() {
-        CachingConnectionFactory factory = new CachingConnectionFactory();
-        
-        if (rabbitmqUrl != null && !rabbitmqUrl.isEmpty()) {
-            // Usar URL de CloudAMQP
-            factory.setUri(rabbitmqUrl);
-            System.out.println("Conectando a CloudAMQP");
-        } else {
-            // Fallback a localhost (para desarrollo)
-            factory.setHost("localhost");
-            factory.setPort(5672);
-            factory.setUsername("guest");
-            factory.setPassword("guest");
-            System.out.println("⚠️ Conectando a localhost");
-        }
-        
-        return factory;
+public org.springframework.amqp.rabbit.connection.ConnectionFactory connectionFactory() {
+    CachingConnectionFactory factory = new CachingConnectionFactory();
+    
+    // Intentar leer de variable de entorno primero
+    String envRabbitmqUrl = System.getenv("RABBITMQ_URL");
+    String configRabbitmqUrl = rabbitmqUrl; // De @Value
+    
+    String finalUrl = (envRabbitmqUrl != null && !envRabbitmqUrl.isEmpty()) 
+        ? envRabbitmqUrl 
+        : configRabbitmqUrl;
+    
+    System.out.println("🔍 DEBUG RabbitMQ:");
+    System.out.println("  - Variable entorno RABBITMQ_URL: " + (envRabbitmqUrl != null ? "SÍ (len=" + envRabbitmqUrl.length() + ")" : "NO"));
+    System.out.println("  - @Value rabbitmq.url: " + (configRabbitmqUrl != null && !configRabbitmqUrl.isEmpty() ? "SÍ" : "NO"));
+    System.out.println("  - URL final a usar: " + (finalUrl != null && !finalUrl.isEmpty() ? "SÍ" : "NO"));
+    
+    if (finalUrl != null && !finalUrl.isEmpty()) {
+        factory.setUri(finalUrl);
+        System.out.println("✅ Conectando a CloudAMQP");
+    } else {
+        factory.setHost("localhost");
+        factory.setPort(5672);
+        factory.setUsername("guest");
+        factory.setPassword("guest");
+        System.out.println("⚠️ Conectando a localhost");
     }
+    
+    return factory;
+}
 
     @Bean
     public Queue pdisQueue() {
