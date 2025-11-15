@@ -3,6 +3,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class PdILocalDTO {
     private String id;
@@ -62,7 +63,7 @@ public class PdILocalDTO {
     
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
-    
+    @JsonIgnore 
     public List<String> getEtiquetas() { return tags; }
     public void setEtiquetas(List<String> etiquetas) { this.tags = etiquetas; }
     
