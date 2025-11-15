@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Primary;
 import jakarta.annotation.PostConstruct;
 
 @Configuration
-@ConditionalOnProperty(name = "rabbitmq.enabled", havingValue = "true", matchIfMissing = false)
 public class RabbitMQConfig {
 
     @Value("${rabbitmq.queue.name:pdis_queue}")
