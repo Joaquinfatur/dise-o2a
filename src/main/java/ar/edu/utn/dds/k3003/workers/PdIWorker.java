@@ -45,7 +45,7 @@ public class PdIWorker {
 
             Optional<PdIEntity> entityOpt = pdiRepository.findById(Integer.parseInt(pdiId));
             if (entityOpt.isEmpty()) {
-                System.out.println("❌ PDI no encontrado: " + pdiId);
+                System.out.println("PDI no encontrado: " + pdiId);
                 return;
             }
 
@@ -72,23 +72,29 @@ public class PdIWorker {
             pdiRepository.save(entity);
             enviarAlSearchService(entity);
             long tiempoTotal = System.currentTimeMillis() - tiempoInicio;
-            System.out.println("✅ PDI " + pdiId + " PROCESADO en " + tiempoTotal + "ms");
+            System.out.println("PDI " + pdiId + " PROCESADO en " + tiempoTotal + "ms");
 
         } catch (Exception e) {
-            System.err.println("❌ ERROR: " + e.getMessage());
+            System.err.println("ERROR: " + e.getMessage());
             e.printStackTrace();
         }
     }
     private void enviarAlSearchService(PdIEntity entity) {
     try {
         String hechoId = entity.getHechoId();
+        
+        if (hechoId == null || hechoId.isEmpty()) {
+            System.out.println("PDI sin hechoId, no se envía al Search Service");
+            return;
+        }
+        
         String searchUrl = "https://search-service-ft8x.onrender.com/search/" + hechoId + "/pdi";
         
         Map<String, Object> payload = new HashMap<>();
         payload.put("contenido", entity.getContenido());
         payload.put("tags", entity.getEtiquetasNuevas());
         
-        System.out.println("📤 Enviando PDI al Search Service: " + searchUrl);
+        System.out.println("Enviando PDI al Search Service: " + searchUrl);
         
         org.springframework.web.reactive.function.client.WebClient.create()
             .patch()
@@ -100,10 +106,10 @@ public class PdIWorker {
             .timeout(java.time.Duration.ofSeconds(10))
             .block();
         
-        System.out.println("✅ PDI enviado al Search Service");
+        System.out.println("PDI enviado al Search Service");
         
     } catch (Exception e) {
-        System.err.println("⚠️ Error enviando al Search Service: " + e.getMessage());
+        System.err.println(" Error enviando al Search Service: " + e.getMessage());
     }
-    }
+}
 }
