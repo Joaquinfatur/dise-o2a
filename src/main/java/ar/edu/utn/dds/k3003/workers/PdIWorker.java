@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;         
+import java.util.HashMap;  
 
 @Service
 public class PdIWorker {
@@ -68,7 +70,7 @@ public class PdIWorker {
             entity.setProcesado(true);
 
             pdiRepository.save(entity);
-
+            enviarAlSearchService(entity);
             long tiempoTotal = System.currentTimeMillis() - tiempoInicio;
             System.out.println("✅ PDI " + pdiId + " PROCESADO en " + tiempoTotal + "ms");
 
@@ -76,5 +78,32 @@ public class PdIWorker {
             System.err.println("❌ ERROR: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    private void enviarAlSearchService(PdIEntity entity) {
+    try {
+        String hechoId = entity.getHechoId();
+        String searchUrl = "https://search-service-ft8x.onrender.com/search/" + hechoId + "/pdi";
+        
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("contenido", entity.getContenido());
+        payload.put("tags", entity.getEtiquetasNuevas());
+        
+        System.out.println("📤 Enviando PDI al Search Service: " + searchUrl);
+        
+        org.springframework.web.reactive.function.client.WebClient.create()
+            .patch()  // ← CAMBIADO A PATCH
+            .uri(searchUrl)
+            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+            .bodyValue(payload)
+            .retrieve()
+            .bodyToMono(String.class)
+            .timeout(java.time.Duration.ofSeconds(10))
+            .block();
+        
+        System.out.println("✅ PDI enviado al Search Service");
+        
+    } catch (Exception e) {
+        System.err.println("⚠️ Error enviando al Search Service: " + e.getMessage());
+    }
     }
 }
