@@ -1,6 +1,5 @@
 package ar.edu.utn.dds.k3003.config;
 
-import com.rabbitmq.client.ConnectionFactory;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -26,34 +25,16 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.routing.key:pdis.process}")
     private String routingKey;
     
-    @Value("${spring.rabbitmq.host:localhost}")
-    private String host;
-    
-    @Value("${spring.rabbitmq.port:5672}")
-    private int port;
-    
-    @Value("${spring.rabbitmq.username:guest}")
-    private String username;
-    
-    @Value("${spring.rabbitmq.password:guest}")
-    private String password;
-    
-    @Value("${spring.rabbitmq.virtual-host:/}")
-    private String virtualHost;
-    
-    @Value("${spring.rabbitmq.ssl.enabled:false}")
-    private boolean sslEnabled;
+   
+    @Value("${rabbitmq.url:}")
+    private String rabbitmqUrl;
 
     @PostConstruct
     public void debugRabbitMQConfig() {
         System.out.println("=================================================");
         System.out.println("RABBITMQ CONFIG DEBUG");
         System.out.println("=================================================");
-        System.out.println("Host: " + host);
-        System.out.println("Port: " + port);
-        System.out.println("Username: " + username);
-        System.out.println("VHost: " + virtualHost);
-        System.out.println("SSL Enabled: " + sslEnabled);
+        System.out.println("RabbitMQ URL configurada: " + (rabbitmqUrl != null && !rabbitmqUrl.isEmpty() ? "SÍ" : "NO"));
         System.out.println("Queue Name: " + queueName);
         System.out.println("Exchange Name: " + exchangeName);
         System.out.println("Routing Key: " + routingKey);
@@ -63,27 +44,22 @@ public class RabbitMQConfig {
     @Bean
     @Primary
     public org.springframework.amqp.rabbit.connection.ConnectionFactory connectionFactory() {
-        com.rabbitmq.client.ConnectionFactory rabbitFactory = new com.rabbitmq.client.ConnectionFactory();
+        CachingConnectionFactory factory = new CachingConnectionFactory();
         
-        rabbitFactory.setHost(host);
-        rabbitFactory.setPort(port);
-        rabbitFactory.setUsername(username);
-        rabbitFactory.setPassword(password);
-        rabbitFactory.setVirtualHost(virtualHost);
-        
-        if (sslEnabled) {
-            try {
-                rabbitFactory.useSslProtocol();
-            } catch (Exception e) {
-                throw new RuntimeException("Error configurando SSL para RabbitMQ", e);
-            }
+        if (rabbitmqUrl != null && !rabbitmqUrl.isEmpty()) {
+            // Usar URL de CloudAMQP
+            factory.setUri(rabbitmqUrl);
+            System.out.println("Conectando a CloudAMQP");
+        } else {
+            // Fallback a localhost (para desarrollo)
+            factory.setHost("localhost");
+            factory.setPort(5672);
+            factory.setUsername("guest");
+            factory.setPassword("guest");
+            System.out.println("⚠️ Conectando a localhost");
         }
         
-        CachingConnectionFactory connectionFactory = new CachingConnectionFactory(rabbitFactory);
-        
-        System.out.println("ConnectionFactory configurado para: " + host + ":" + port);
-        
-        return connectionFactory;
+        return factory;
     }
 
     @Bean
