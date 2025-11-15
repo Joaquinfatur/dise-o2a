@@ -8,9 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,7 +21,6 @@ public class ImageProcessingService {
     private ServicesClient servicesClient;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
     
     private static final Pattern IMAGE_URL_PATTERN = Pattern.compile(
         "https?://[\\w\\-_]+(\\.[\\w\\-_]+)+([\\w\\-\\.,@?^=%&:/~\\+#]*[\\w\\-\\@?^=%&/~\\+#])?" +
@@ -38,17 +37,16 @@ public class ImageProcessingService {
     
         if (imagenUrl != null) {
             System.out.println("URL de imagen encontrada: " + imagenUrl);
-         pdi.setImagenUrl(imagenUrl);
-        
-        // CAMBIO: PROCESAMIENTO SÍNCRONO EN LUGAR DE ASÍNCRONO
-        procesarImagenSincrona(pdi, imagenUrl);
+            pdi.setImagenUrl(imagenUrl);
+            procesarImagenSincrona(pdi, imagenUrl);
         } else {
-        System.out.println("No se encontró URL de imagen, procesando solo texto");
-        agregarEtiquetasPorContenido(pdi);
+            System.out.println("No se encontró URL de imagen, procesando solo texto");
+            agregarEtiquetasPorContenido(pdi);
         }
     
         pdi.setProcesado(true);
     }
+
     private String extraerImagenUrl(PdI pdi) {
         if (pdi.getImagenUrl() != null && !pdi.getImagenUrl().trim().isEmpty()) {
             return pdi.getImagenUrl(); 
@@ -67,23 +65,26 @@ public class ImageProcessingService {
     }
 
     public List<String> generarEtiquetasAutomaticas(String ocrResultado, String etiquetadoResultado) {
-        List<String> etiquetas = new ArrayList<>();
-        
+        Set<String> etiquetas = new HashSet<>();  // ← USAR SET para evitar duplicados
         
         if (ocrResultado != null && !ocrResultado.contains("Error")) {
             etiquetas.addAll(procesarResultadoOCR(ocrResultado));
         }
         
-        
         if (etiquetadoResultado != null && !etiquetadoResultado.contains("Error")) {
             etiquetas.addAll(procesarResultadoEtiquetado(etiquetadoResultado));
         }
         
+        // Si no hay etiquetas, agregar mínimas
+        if (etiquetas.isEmpty()) {
+            etiquetas.add("ImagenAnalizada");
+        }
         
+        // Agregar generales
         etiquetas.add("ConImagen");
         etiquetas.add("ProcesadoIA");
         
-        return etiquetas;
+        return new ArrayList<>(etiquetas);  // Convertir a List
     }
 
     private List<String> procesarResultadoOCR(String ocrJson) {
@@ -100,9 +101,8 @@ public class ImageProcessingService {
                         
                         if (texto != null && !texto.trim().isEmpty()) {
                             etiquetas.add("ConTexto");
-
                             textoEncontrado = true;
-                            // Análisis básico del texto
+                            
                             String textoLower = texto.toLowerCase();
                             if (textoLower.contains("fecha") || textoLower.matches(".*\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}.*")) {
                                 etiquetas.add("ConFecha");
@@ -117,7 +117,7 @@ public class ImageProcessingService {
                     }
                 }
             }
-            //Fallback
+            
             if (!textoEncontrado) {
                 etiquetas.add("SinTexto");
                 etiquetas.add("ImagenSinOCR");
@@ -129,7 +129,7 @@ public class ImageProcessingService {
         }
         
         return etiquetas;
-}
+    }
 
     private List<String> procesarResultadoEtiquetado(String etiquetadoJson) {
         List<String> etiquetas = new ArrayList<>();
@@ -137,13 +137,11 @@ public class ImageProcessingService {
         try {
             JsonNode root = objectMapper.readTree(etiquetadoJson);
             
-            
             if (root.has("labels") && root.get("labels").isArray()) {
                 for (JsonNode label : root.get("labels")) {
                     if (label.has("name")) {
                         String nombreEtiqueta = label.get("name").asText();
                         double confianza = label.has("confidence") ? label.get("confidence").asDouble() : 0.0;
-                        
                         
                         if (confianza >= 0.5) {
                             etiquetas.add("IA_" + nombreEtiqueta.replaceAll("\\s+", "_"));
@@ -151,7 +149,6 @@ public class ImageProcessingService {
                     }
                 }
             }
-            
             
             if (etiquetas.isEmpty()) {
                 etiquetas.add("ImagenAnalizada");
@@ -172,7 +169,6 @@ public class ImageProcessingService {
         if (contenido != null) {
             String contenidoLower = contenido.toLowerCase();
             
-            
             etiquetas.add("SoloTexto");
             
             if (contenido.length() > 100) {
@@ -180,7 +176,6 @@ public class ImageProcessingService {
             } else if (contenido.length() < 20) {
                 etiquetas.add("TextoCorto");
             }
-            
             
             if (contenidoLower.contains("urgente") || contenidoLower.contains("importante")) {
                 etiquetas.add("Prioritario");
@@ -198,32 +193,31 @@ public class ImageProcessingService {
         etiquetas.add("ProcesadoTexto");
         pdi.etiquetarNuevo(etiquetas);
     }
-    // Procesamiento síncrono 
+
     private void procesarImagenSincrona(PdI pdi, String imagenUrl) {
-    System.out.println("Procesando imagen de forma síncrona...");
-    
-    try {
-        // OCR
-        String ocrResultado = servicesClient.procesarOCR(imagenUrl);
-        System.out.println("OCR completado para PDI " + pdi.getId());
-        pdi.setOcrResultado(ocrResultado);
+        System.out.println("Procesando imagen de forma síncrona...");
         
-        // Etiquetado
-        String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
-        System.out.println("Etiquetado completado para PDI " + pdi.getId());
-        pdi.setEtiquetadoResultado(etiquetadoResultado);
-        
-        // Generar etiquetas
-        List<String> etiquetasAutomaticas = generarEtiquetasAutomaticas(ocrResultado, etiquetadoResultado);
-        pdi.etiquetarNuevo(etiquetasAutomaticas);
-        
-        System.out.println("Procesamiento de imagen completado para PDI " + pdi.getId());
-        System.out.println("Etiquetas generadas: " + etiquetasAutomaticas);
-        
-    } catch (Exception e) {
-        System.err.println("Error procesando imagen: " + e.getMessage());
-        
-        pdi.etiquetarNuevo(List.of("ConImagen", "ErrorProcesamiento"));
-    }
+        try {
+            // OCR
+            String ocrResultado = servicesClient.procesarOCR(imagenUrl);
+            System.out.println("OCR completado para PDI " + pdi.getId());
+            pdi.setOcrResultado(ocrResultado);
+            
+            // Etiquetado
+            String etiquetadoResultado = servicesClient.procesarEtiquetado(imagenUrl);
+            System.out.println("Etiquetado completado para PDI " + pdi.getId());
+            pdi.setEtiquetadoResultado(etiquetadoResultado);
+            
+            // Generar etiquetas
+            List<String> etiquetasAutomaticas = generarEtiquetasAutomaticas(ocrResultado, etiquetadoResultado);
+            pdi.etiquetarNuevo(etiquetasAutomaticas);
+            
+            System.out.println("Procesamiento de imagen completado para PDI " + pdi.getId());
+            System.out.println("Etiquetas generadas: " + etiquetasAutomaticas);
+            
+        } catch (Exception e) {
+            System.err.println("Error procesando imagen: " + e.getMessage());
+            pdi.etiquetarNuevo(List.of("ConImagen", "ErrorProcesamiento"));
+        }
     }
 }
