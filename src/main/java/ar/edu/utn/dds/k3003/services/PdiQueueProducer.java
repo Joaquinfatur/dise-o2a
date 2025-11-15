@@ -8,12 +8,12 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-public class PdiQueueProducer {
+public class PdIQueueProducer {
 
     private final RabbitTemplate rabbitTemplate;
     private final Counter pdisEncoladosCounter;
     
-    public PdiQueueProducer(RabbitTemplate rabbitTemplate, MeterRegistry meterRegistry) {
+    public PdIQueueProducer(RabbitTemplate rabbitTemplate, MeterRegistry meterRegistry) {
         this.rabbitTemplate = rabbitTemplate;
         
         // Métrica: contador de PDIs encolados
