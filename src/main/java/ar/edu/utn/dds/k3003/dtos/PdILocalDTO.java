@@ -4,8 +4,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class PdILocalDTO {
-    
+    @JsonProperty("hecho_id")
     private String id;
     private String hechoId;
     private String contenido;
