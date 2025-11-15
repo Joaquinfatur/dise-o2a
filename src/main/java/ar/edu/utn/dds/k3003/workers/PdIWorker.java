@@ -30,7 +30,7 @@ public class PdIWorker {
         System.out.println("✅✅✅ PDIWORKER BEAN CREATED ✅✅✅");
     }
 
-    @RabbitListener(queues = "pdis_queue")
+    @RabbitListener(queues = {"pdis_queue"})
     @Transactional
     public void procesarPdI(PdIMessageDTO mensaje) {
         long tiempoInicio = System.currentTimeMillis();
