@@ -2,11 +2,12 @@ package ar.edu.utn.dds.k3003;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = {RabbitAutoConfiguration.class})  // ← AGREGAR ESTO
 public class Application {
     
     @Autowired
@@ -16,7 +17,7 @@ public class Application {
         SpringApplication.run(Application.class, args);
     }
     
-        @PostConstruct  
+    @PostConstruct  
     public void verifyDatabase() {
         try {
             String url = dataSource.getConnection().getMetaData().getURL();
@@ -29,11 +30,10 @@ public class Application {
             String rabbitmqUrl = System.getenv("RABBITMQ_URL");
             System.out.println("========================================");
             System.out.println(" RABBITMQ_ENABLED: " + rabbitmqEnabled);
-            System.out.println(" RABBITMQ_URL: " + (rabbitmqUrl != null ? rabbitmqUrl.substring(0, 30) + "..." : "NULL"));
+            System.out.println(" RABBITMQ_URL: " + (rabbitmqUrl != null ? "NULL" : "NULL"));
             System.out.println("========================================");
         } catch (Exception e) {
             System.err.println(" ERROR CONECTANDO DB: " + e.getMessage());
         }
     }
-    
 }
