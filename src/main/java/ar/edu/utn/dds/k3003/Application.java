@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 
-@SpringBootApplication(exclude = {RabbitAutoConfiguration.class})  // ← AGREGAR ESTO
+@SpringBootApplication // ← AGREGAR ESTO
 public class Application {
     
     @Autowired
