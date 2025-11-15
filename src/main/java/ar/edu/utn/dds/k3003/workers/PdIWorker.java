@@ -40,6 +40,9 @@ public class PdIWorker {
     @Autowired
     private ImageProcessingService imageProcessingService;
 
+    public PdIWorker() {
+        System.out.println("✅✅✅ PDWORKER INITIALIZED ✅✅✅");
+    }
     /**
      * Procesa un mensaje de PDI desde la cola
      * 
