@@ -27,7 +27,6 @@ import java.util.Optional;
  * 4. Confirma el mensaje (ACK)
  */
 @Service
-@ConditionalOnProperty(name = "rabbitmq.enabled", havingValue = "true", matchIfMissing = false)
 public class PdIWorker {
 
     private static final Logger log = LoggerFactory.getLogger(PdIWorker.class);
