@@ -43,35 +43,46 @@ public class RabbitMQConfig {
 
     @Bean
     @Primary
-public org.springframework.amqp.rabbit.connection.ConnectionFactory connectionFactory() {
-    CachingConnectionFactory factory = new CachingConnectionFactory();
-    
-    // Intentar leer de variable de entorno primero
-    String envRabbitmqUrl = System.getenv("RABBITMQ_URL");
-    String configRabbitmqUrl = rabbitmqUrl; // De @Value
-    
-    String finalUrl = (envRabbitmqUrl != null && !envRabbitmqUrl.isEmpty()) 
-        ? envRabbitmqUrl 
-        : configRabbitmqUrl;
-    
-    System.out.println("🔍 DEBUG RabbitMQ:");
-    System.out.println("  - Variable entorno RABBITMQ_URL: " + (envRabbitmqUrl != null ? "SÍ (len=" + envRabbitmqUrl.length() + ")" : "NO"));
-    System.out.println("  - @Value rabbitmq.url: " + (configRabbitmqUrl != null && !configRabbitmqUrl.isEmpty() ? "SÍ" : "NO"));
-    System.out.println("  - URL final a usar: " + (finalUrl != null && !finalUrl.isEmpty() ? "SÍ" : "NO"));
-    
-    if (finalUrl != null && !finalUrl.isEmpty()) {
-        factory.setUri(finalUrl);
-        System.out.println("✅ Conectando a CloudAMQP");
-    } else {
-        factory.setHost("localhost");
-        factory.setPort(5672);
-        factory.setUsername("guest");
-        factory.setPassword("guest");
-        System.out.println("⚠️ Conectando a localhost");
+    public org.springframework.amqp.rabbit.connection.ConnectionFactory connectionFactory() {
+        CachingConnectionFactory factory = new CachingConnectionFactory();
+        
+        // Intentar leer de variable de entorno en este orden:
+        // 1. RABBITMQ_URL (variable custom)
+        // 2. SPRING_RABBITMQ_URI (variable estándar de Spring)
+        // 3. Del archivo properties (@Value rabbitmq.url)
+        String envRabbitmqUrl = System.getenv("RABBITMQ_URL");
+        String springRabbitmqUri = System.getenv("SPRING_RABBITMQ_URI");
+        String configRabbitmqUrl = rabbitmqUrl; // De @Value
+        
+        String finalUrl = (envRabbitmqUrl != null && !envRabbitmqUrl.isEmpty()) 
+            ? envRabbitmqUrl 
+            : (springRabbitmqUri != null && !springRabbitmqUri.isEmpty() ? springRabbitmqUri : configRabbitmqUrl);
+        
+        System.out.println("🔍 DEBUG RabbitMQ ConnectionFactory:");
+        System.out.println("  - Variable entorno RABBITMQ_URL: " + (envRabbitmqUrl != null && !envRabbitmqUrl.isEmpty() ? "SÍ (len=" + envRabbitmqUrl.length() + ")" : "NO"));
+        System.out.println("  - Variable entorno SPRING_RABBITMQ_URI: " + (springRabbitmqUri != null && !springRabbitmqUri.isEmpty() ? "SÍ (len=" + springRabbitmqUri.length() + ")" : "NO"));
+        System.out.println("  - @Value rabbitmq.url: " + (configRabbitmqUrl != null && !configRabbitmqUrl.isEmpty() ? "SÍ" : "NO"));
+        System.out.println("  - URL final a usar: " + (finalUrl != null && !finalUrl.isEmpty() ? "SÍ" : "NO"));
+        
+        if (finalUrl != null && !finalUrl.isEmpty()) {
+            try {
+                factory.setUri(finalUrl);
+                System.out.println("✅ Conectando a CloudAMQP");
+            } catch (Exception e) {
+                System.err.println("❌ Error al parsear URI de RabbitMQ: " + e.getMessage());
+                e.printStackTrace();
+                throw new RuntimeException("Error configurando RabbitMQ URI", e);
+            }
+        } else {
+            factory.setHost("localhost");
+            factory.setPort(5672);
+            factory.setUsername("guest");
+            factory.setPassword("guest");
+            System.out.println("⚠️ Conectando a localhost (fallback)");
+        }
+        
+        return factory;
     }
-    
-    return factory;
-}
 
     @Bean
     public Queue pdisQueue() {
